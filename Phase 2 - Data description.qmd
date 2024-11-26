@@ -3,8 +3,20 @@ title: "Phase 2 - Data description"
 format: html
 ---
 
+## Libraries
+```{r}
+library(vroom)
+library(here)
+library(tidyr)
+```
+
+
 ## Adding the data
 
+```{r}
+emissions_data <- vroom(here("data", "emissions_by_unit_and_fuel_type_c_d_aa.csv"))
+workforce_data <- vroom(here("data", "qwi_ca_se_f_gs_n4_oslp_u.csv"))
+```
 
 
 ## Links and sources

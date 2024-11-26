@@ -21,9 +21,42 @@ library(kableExtra)
 #| echo: false
 emissions_data <- vroom(here("data", "emissions_by_unit_and_fuel_type_c_d_aa.csv"))
 workforce_data <- vroom(here("data", "qwi_ca_se_f_gs_n4_oslp_u.csv"))
+subsectors_type <- vroom(here("data", "subsect_types.csv"))
 ```
 
 ## Links and sources
+
+
+### Link to the github project
+
+  https://github.com/vito100-8/Research_project.git
+  
+### Some infos about the data sources
+
+
+### Links to the dataset sources
+
+Emissions by Unit and Fuel Type (from the US Environmental Protection Agency) : https://www.epa.gov/system/files/other-files/2024-10/emissions_by_unit_and_fuel_type_c_d_aa.zip
+
+THe zipped file contained an Excel binary file, with four sheets : Emissions by Unit type, Emissions by Fuel type, Industry type referencing to the first two sheets and a Q&A sheet. 
+We chose to focus on only the first sheet, which contained CO2 emissions of energy producers. The third sheet containing information about the sub-sectors in which the energy facilities are listed. We saved these two sheets in two separate CSV files. 
+We needed to unzip it and create a CSV manually because the native file contained lines not understandable by R.
+
+Quarterly Workforce Indicators (QWI) Data (from the US Census Bureau) :
+https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_al_se_fs_gs_n4_op_u.csv.gz
+
+We manually unzipped the unique datafile before loading it into R. 
+
+
+
+
+
+
+
+
+
+
+
 
 ## About the datasets
 

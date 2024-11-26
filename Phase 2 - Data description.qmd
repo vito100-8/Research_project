@@ -4,26 +4,68 @@ format: html
 ---
 
 ## Libraries
+
 ```{r}
+#| echo: false
 library(vroom)
 library(here)
 library(tidyr)
+library(dplyr)
+library(knitr)
+library(kableExtra)
 ```
-
 
 ## Adding the data
 
 ```{r}
+#| echo: false
 emissions_data <- vroom(here("data", "emissions_by_unit_and_fuel_type_c_d_aa.csv"))
 workforce_data <- vroom(here("data", "qwi_ca_se_f_gs_n4_oslp_u.csv"))
 ```
 
-
 ## Links and sources
-
-
 
 ## About the datasets
 
+```{r}
+#| echo: false
+#Summary table for emissions
+emissions_summary <- emissions_data |>
+  summarise(
+    "Number of rows" = nrow(emissions_data),
+    "Number of columns" = ncol(emissions_data),
+    "Period" = paste(range(`Reporting Year`), collapse= " - "),
+    "Periodicity" = "Annual",
+    "Number of different companies" = length(unique(`Primary NAICS Code`)),
+    "Extremum levels of CO2 emissions " = paste(range(`Unit CO2 emissions (non-biogenic)`), collapse = " - "),
+    "Number of sectors" = n_distinct(unlist(strsplit(paste(`Industry Type (sectors)`, collapse = ","), ",\\s*"))), #separate the rows that have a "," to not double count firms in several subsectors as distinct values
+    "Number of subparts" = n_distinct(unlist(strsplit(paste(`Industry Type (subparts)`, collapse = ","), ",\\s*"))),
+    "Total number of missing values across the sheet" = sum(sapply(emissions_data, function(x) sum(is.na(x))))
+    
+  )
 
+
+emissions_summary |>
+  kable("html", caption = "Emissions database information") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+
+```
+
+```{r}
+#Summary table for workforce
+workforce_summary <- workforce_data |>
+  summarise(
+    "Number of rows" = nrow(workforce_data),
+    "Number of columns" = ncol(workforce_data),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Quarterly",
+    "Number of industry (NAICS 4)" = length(unique(industry)),
+    "Extremums of employment (Quarterly)" = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
+    "Total number of missing values across the sheet" = sum(sapply(workforce_data, function(x) sum(is.na(x))))
+    
+  )
+workforce_summary |>
+  kable("html", caption = "Workforce database information") |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
+```
 

@@ -145,9 +145,9 @@ workforce_summary |>
 
 ## Data treatment
 
-### Merge preparation for the workforce dataset
-
 Our analysis period will be 2011-2023.
+
+### Merge preparation for the workforce dataset
 
 ```{r}
 clean_wf_data <-
@@ -198,4 +198,17 @@ emissions_data <- emissions_data |>
   
 
 ```
+
+### Merging the two datasets
+
+```{r}
+final_dataset <-
+  
+```
+
+## Main target variable
+
+## Research question
+
+
 

@@ -47,17 +47,6 @@ https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_al_se_fs_gs_n4_op_u.c
 
 We manually unzipped the unique datafile before loading it into R. 
 
-
-
-
-
-
-
-
-
-
-
-
 ## About the datasets
 
 ```{r}
@@ -101,4 +90,15 @@ workforce_summary |>
   kable("html", caption = "Workforce database information") |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
 ```
+
+## Description of key variables
+
+### Emissions database
+
+### Workforce database
+
+
+
+
+## Data treatment
 

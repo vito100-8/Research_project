@@ -170,13 +170,16 @@ emissions_data <- emissions_data |>
 emissions_data <- emissions_data |> 
   filter(State == "CA") |>  # We only keep Californian firms
   mutate(
-    `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4),
-    `Unit CO2 emissions (non-biogenic)` = parse_number(`Unit CO2 emissions (non-biogenic)`),  # To avoid issues     with the NA numbers during the sum after
+    `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4), #agregation at NAICS 4 level
+    # To avoid issues with the NA numbers during the sum after with parse number (convert from character to numerical)
+    `Unit CO2 emissions (non-biogenic)` = parse_number(`Unit CO2 emissions (non-biogenic)`),  
     `Unit Methane (CH4) emissions` = parse_number(`Unit Methane (CH4) emissions`),
     `Unit Nitrous Oxide (N2O) emissions` = parse_number(`Unit Nitrous Oxide (N2O) emissions`),
   ) |> 
-  group_by(`NAICS 4 (subsectors)`, `Reporting Year`, `Unit Type`) |>  # Group by NAICS subsectors and reporting year
+  # Group by NAICS subsectors, reporting year and unit type
+  group_by(`NAICS 4 (subsectors)`, `Reporting Year`, `Unit Type`) |> 
   summarise(
+    #We keep our values of interest
     `Total CO2 Emissions (non_biogenic)` = sum(`Unit CO2 emissions (non-biogenic)`, na.rm = TRUE), 
     `Total CH4 Emissions` = sum(`Unit Methane (CH4) emissions`, na.rm = TRUE),
     `Total N20 Emissions` = sum(`Unit Nitrous Oxide (N2O) emissions`, na.rm = TRUE),

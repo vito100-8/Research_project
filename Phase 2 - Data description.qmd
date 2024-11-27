@@ -1,19 +1,30 @@
 ---
 title: "Phase 2 - Data description"
 format: html
+editor: 
+  markdown: 
+    wrap: sentence
 ---
 
 ## Libraries
+
 ```{r}
+#| echo: false
+#| message: false
+#| warning: false
 library(vroom)
 library(here)
 library(tidyr)
+library(dplyr)
+library(knitr)
+library(kableExtra)
 ```
-
 
 ## Adding the data
 
 ```{r}
+#| echo: false
+#| message: false
 emissions_data <- vroom(here("data", "emissions_by_unit_and_fuel_type_c_d_aa.csv"))
 workforce_data <- vroom(here("data", "qwi_ca_se_f_gs_n4_oslp_u.csv"))
 subsectors_type <- vroom(here("data", "subsect_types.csv"))
@@ -24,8 +35,8 @@ subsectors_type <- vroom(here("data", "subsect_types.csv"))
 
 ### Link to the github project
 
-  https://github.com/vito100-8/Research_project.git
-  
+https://github.com/vito100-8/Research_project.git
+
 Due to our use of very large data files, we used Git LFS (Large File Storage) that allowed us to push our data into the project repository.
 
 ### Some infos about the data sources
@@ -34,30 +45,80 @@ We used two data sources : the US Environmental Protection Agency and the US Cen
 
 #### Environmental Protection Agency
 
-The Environmental Protection Agency (EPA) is an American federal agency which takes part in scientific research and enforces environmental laws by developing regulations to contribute to the preservation of the environment. Its main missions are fighting against climate change, reducing pollution, and ensuring environmental equity.
-As part of its monitoring and regulatory role, the EPA produces multiple databases, such as the Air Quality System (AQS, which contains data from air pollution monitoring stations across the U.S; Greenhouse Gas (GHG) Reporting Program which provides data on greenhouse gas emissions from large facilities. The dataset which we will use in this project is part of the GHG Program. 
-All datasets of the EPA are open data, as part of the objective of scientific transparency which is promoted by the agency. The EPA also possesses its own built-in data tools, like EnviroFacts, which allows for an immediate  analysis of data. 
+The Environmental Protection Agency (EPA) is an American federal agency which takes part in scientific research and enforces environmental laws by developing regulations to contribute to the preservation of the environment.
+Its main missions are fighting against climate change, reducing pollution, and ensuring environmental equity.
+As part of its monitoring and regulatory role, the EPA produces multiple databases, such as the Air Quality System (AQS, which contains data from air pollution monitoring stations across the U.S; Greenhouse Gas (GHG) Reporting Program which provides data on greenhouse gas emissions from large facilities.
+The dataset which we will use in this project is part of the GHG Program.
+All datasets of the EPA are open data, as part of the objective of scientific transparency which is promoted by the agency.
+The EPA also possesses its own built-in data tools, like EnviroFacts, which allows for an immediate analysis of data.
 
 #### United States Census Bureau
 
-The U.S. Census Bureau, part of the Department of Commerce, is the federal agency responsible for collecting and analyzing data about the U.S. population and economy. Its primary role is conducting the decennial U.S. Census, which determines congressional representation, legislative district boundaries, and the allocation of federal funds for infrastructure, healthcare, etc. 
-The agency also conducts the Economic Census every five years, which provides data on the industries and businesses in the US. The agency also conducts yearly, quarterly and monthly surveys about the socio-economic dynamics of the population and labor statistics. The dataset we used is part of the Quarterly Workforce Indicators,coming from the Longitudinal Employer-Household Dynamics page. The QWI is particular in the way that it is able to link workers to where they work, which allows for the identification of worker flows, demographics etc.
-The US Census Bureau’s data is accessible and open to all. Through the platform data.census.gov, one is able to add and filter data directly for analysis or creation of geographic maps, tables etc.
+The U.S. Census Bureau, part of the Department of Commerce, is the federal agency responsible for collecting and analyzing data about the U.S. population and economy.
+Its primary role is conducting the decennial U.S.
+Census, which determines congressional representation, legislative district boundaries, and the allocation of federal funds for infrastructure, healthcare, etc.
+The agency also conducts the Economic Census every five years, which provides data on the industries and businesses in the US.
+The agency also conducts yearly, quarterly and monthly surveys about the socio-economic dynamics of the population and labor statistics.
+The dataset we used is part of the Quarterly Workforce Indicators,coming from the Longitudinal Employer-Household Dynamics page.
+The QWI is particular in the way that it is able to link workers to where they work, which allows for the identification of worker flows, demographics etc.
+The US Census Bureau’s data is accessible and open to all.
+Through the platform data.census.gov, one is able to add and filter data directly for analysis or creation of geographic maps, tables etc.
 
 ### Links to the dataset sources
 
 Emissions by Unit and Fuel Type (from the US Environmental Protection Agency) : https://www.epa.gov/system/files/other-files/2024-10/emissions_by_unit_and_fuel_type_c_d_aa.zip
 
-THe zipped file contained an Excel binary file, with four sheets : Emissions by Unit type, Emissions by Fuel type, Industry type referencing to the first two sheets and a Q&A sheet. 
-We chose to focus on only the first sheet, which contained CO2 emissions of energy producers. The third sheet containing information about the sub-sectors in which the energy facilities are listed. We saved these two sheets in two separate CSV files. 
+The zipped file contained an Excel binary file, with four sheets : Emissions by Unit type, Emissions by Fuel type, Industry type referencing to the first two sheets and a Q&A sheet.
+We chose to focus on only the first sheet, which contained CO2 emissions of energy producers.
+The third sheet containing information about the sub-sectors in which the energy facilities are listed.
+We saved these two sheets in two separate CSV files.
 We needed to unzip it and create a CSV manually because the native file contained lines not understandable by R.
 
-Quarterly Workforce Indicators (QWI) Data (from the US Census Bureau) :
-https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_al_se_fs_gs_n4_op_u.csv.gz
+Quarterly Workforce Indicators (QWI) Data (from the US Census Bureau) : https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_al_se_fs_gs_n4_op_u.csv.gz
 
-We manually unzipped the unique datafile before loading it into R. 
+We manually unzipped the unique datafile before loading it into R.
+
 
 ## About the datasets
 
+```{r}
+#| echo: false
+#Summary table for emissions
+emissions_summary <- emissions_data |>
+  summarise(
+    "Number of rows" = nrow(emissions_data),
+    "Number of columns" = ncol(emissions_data),
+    "Period" = paste(range(`Reporting Year`), collapse= " - "),
+    "Periodicity" = "Annual",
+    "Extremum levels of CO2 emissions " = paste(range(`Unit CO2 emissions (non-biogenic)`), collapse = " - "),
+    "Number of sectors" = n_distinct(unlist(strsplit(paste(`Industry Type (sectors)`, collapse = ","), ",\\s*"))), #separate the rows that have a "," to not double count firms in several subsectors as distinct values
+    "Number of subparts" = n_distinct(unlist(strsplit(paste(`Industry Type (subparts)`, collapse = ","), ",\\s*"))),
+    "Number of different companies" = length(unique(`Primary NAICS Code`)),
+    "Total number of missing values across the sheet" = sum(sapply(emissions_data, function(x) sum(is.na(x))))
+  )
 
+emissions_summary |>
+  kable("html", caption = "Emissions database information") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+```{r}
+#| echo: false
+#Summary table for workforce
+workforce_summary <- workforce_data |>
+  summarise(
+    "Number of rows" = nrow(workforce_data),
+    "Number of columns" = ncol(workforce_data),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Quarterly",
+    "Extremums of employment (Quarterly)" = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
+    "Number of industry (NAICS 4)" = length(unique(industry)),
+    "Total number of missing values across the sheet" = sum(sapply(workforce_data, function(x) sum(is.na(x))))
+  )
+
+workforce_summary |>
+  kable("html", caption = "Workforce database information") |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
+```
 

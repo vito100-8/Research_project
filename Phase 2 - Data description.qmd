@@ -18,6 +18,7 @@ library(tidyr)
 library(dplyr)
 library(knitr)
 library(kableExtra)
+library(readr)
 ```
 
 ## Adding the data
@@ -166,4 +167,35 @@ clean_wf_data <-
 ```
 
 ### Merge preparation for the emissions dataset
+
+```{r}
+#keeping only data from 2011- 2023 
+emissions_data <- emissions_data |> 
+  filter(`Reporting Year` > 2010)
+
+#keeping only the relevant columns
+emissions_data <- emissions_data |>
+  select(State:`Unit Type`, `Unit CO2 emissions (non-biogenic)`:`Unit Biogenic CO2 emissions (metric tons)`)
+
+#agregating the database into a subsectors (NAICS 4) level
+
+emissions_data <- emissions_data |> 
+  filter(State == "CA") |>  # We only keep Californian firms
+  mutate(
+    `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4),
+    `Unit CO2 emissions (non-biogenic)` = parse_number(`Unit CO2 emissions (non-biogenic)`),  # To avoid issues     with the NA numbers during the sum after
+    `Unit Methane (CH4) emissions` = parse_number(`Unit Methane (CH4) emissions`),
+    `Unit Nitrous Oxide (N2O) emissions` = parse_number(`Unit Nitrous Oxide (N2O) emissions`),
+  ) |> 
+  group_by(`NAICS 4 (subsectors)`, `Reporting Year`, `Unit Type`) |>  # Group by NAICS subsectors and reporting year
+  summarise(
+    `Total CO2 Emissions (non_biogenic)` = sum(`Unit CO2 emissions (non-biogenic)`, na.rm = TRUE), 
+    `Total CH4 Emissions` = sum(`Unit Methane (CH4) emissions`, na.rm = TRUE),
+    `Total N20 Emissions` = sum(`Unit Nitrous Oxide (N2O) emissions`, na.rm = TRUE),
+    `Number of firms` = n(),  
+  )
+
+  
+
+```
 

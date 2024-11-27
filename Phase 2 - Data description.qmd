@@ -75,7 +75,7 @@ We saved these two sheets in two separate CSV files.
 We needed to unzip it and create a CSV manually because the native file contained lines not understandable by R.
 
 Quarterly Workforce Indicators (QWI) Data (from the US Census Bureau) :
-https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_al_se_fs_gs_n4_op_u.csv.gz
+https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_al_se_f_gs_n4_oslp_u.csv.gz
 
 We manually unzipped the unique datafile before loading it into R. 
 
@@ -136,4 +136,15 @@ workforce_summary |>
 
 
 ## Data treatment
+
+### Merge preparation for the workforce dataset
+
+Our analysis period will be 2011-2023.
+```{r}
+workforce_data |>
+  filter(year > 2010 & year < 2024) |>
+  
+```
+
+### Merge preparation for the emissions dataset
 

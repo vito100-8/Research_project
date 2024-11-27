@@ -179,7 +179,7 @@ emissions_data <- emissions_data |>
 
 #agregating the database into a subsectors (NAICS 4) level
 
-emissions_data <- emissions_data |> 
+clean_em_data <- emissions_data |> 
   filter(State == "CA") |>  # We only keep Californian firms
   mutate(
     `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4), #agregation at NAICS 4 level
@@ -197,8 +197,6 @@ emissions_data <- emissions_data |>
     `Total N20 Emissions` = sum(`Unit Nitrous Oxide (N2O) emissions`, na.rm = TRUE),
     `Number of firms` = n(),  
   )
-
-  
 
 ```
 

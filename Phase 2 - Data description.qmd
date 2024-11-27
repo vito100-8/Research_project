@@ -130,8 +130,15 @@ workforce_summary |>
 
 ### Emissions database
 
+`Primary NAICS Code` : this variable identifies each firm and will allow us to merge the two datasets by agregating each firm into a Naics code 4 (subsectors).
+`Unit CO2 emissions (non-biogenic)`: gives the quantity of CO2 emissions for each unit (described by the variables `Unit Name` and `Unit Type`) of each firm for a given year
+
+
 ### Workforce database
 
+`industry`: NAICS 4 code that identifies the subsector 
+`EmpTotal`: the variable counts the estimated number of people employed in a firm at any time during the quarter according to the subsector, age and sex categories (we will agregate those specifications later on)
+`EarnS` : gives us the average monthly earnings of employees with stable jobs (in dollars)
 
 
 

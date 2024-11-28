@@ -27,7 +27,8 @@ library(readr)
 #| echo: false
 #| message: false
 emissions_data <- vroom(here("data", "emissions_by_unit_and_fuel_type_c_d_aa.csv"))
-workforce_data <- vroom(here("data", "qwi_ca_se_f_gs_n4_oslp_u.csv"))
+workforce_ca_data <- vroom(here("data", "qwi_ca_se_f_gs_n4_oslp_u.csv"))
+workforce_tx_data <- vroom(here("data", "qwi_tx_se_f_gs_n4_oslp_u.csv"))
 subsectors_type <- vroom(here("data", "subsect_types.csv"))
 ```
 
@@ -76,13 +77,14 @@ We saved these two sheets in two separate CSV files.
 We needed to unzip it and create a CSV manually because the native file contained lines not understandable by R.
 
 Quarterly Workforce Indicators (QWI) Data (from the US Census Bureau) :
+For the State of California : 
 https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_ca_se_f_gs_n4_oslp_u.csv.gz
 
-We manually unzipped the unique datafile before loading it into R. 
+For the State of Texas : 
+https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_tx_se_f_gs_n4_oslp_u.csv.gz
 
-Quarterly Workforce Indicators (QWI) Data (from the US Census Bureau) : https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_al_se_fs_gs_n4_op_u.csv.gz
+We manually unzipped these two datafiles before loading it into R. 
 
-We manually unzipped the unique datafile before loading it into R.
 
 ## About the datasets
 
@@ -129,15 +131,16 @@ workforce_summary |>
 
 ## Description of key variables
 
-### Emissions database
+### Emissions dataset
 
 `Primary NAICS Code` : this variable identifies each firm and will allow us to merge the two datasets by agregating each firm into a Naics code 4 (subsectors).
 `Unit CO2 emissions (non-biogenic)`: gives the quantity of CO2 emissions for each unit (described by the variables `Unit Name` and `Unit Type`) of each firm for a given year
 
 
-### Workforce database
+### Workforce datasets
 
 `industry`: NAICS 4 code that identifies the subsector 
+`geography`: geography code that identifies the state
 `EmpTotal`: the variable counts the estimated number of people employed in a firm at any time during the quarter according to the subsector, age and sex categories (we will agregate those specifications later on)
 `EarnS` : gives us the average monthly earnings of employees with stable jobs (in dollars)
 
@@ -147,22 +150,39 @@ workforce_summary |>
 
 Our analysis period will be 2011-2023.
 
-### Merge preparation for the workforce dataset
+### Merge preparation for the workforce dataset (California and Texas)
 
 ```{r}
-clean_wf_data <-
-  workforce_data |>
+## for the California workforce dataset
+clean_wf_ca_data <-
+  workforce_ca_data |>
   ## selection of analysis period and sector-level
   filter(year > 2010 & year < 2024) |>
   filter(ind_level == 4) |>
   ## selection of variables of interest
   select(industry, sex, education, year, quarter, EmpTotal, EarnS, FrmJbC) |>
-  ## grouping to get annual instead of quarterly data
+  ## replacing quarterly data with annual data by taking the mean value of the four quarters in a year
   group_by(industry, sex, education, year) |>
   summarise(
-    yearly_Emp = round(mean(EmpTotal, na.rm = TRUE)),
-    yearly_FrmJbC = round(mean(FrmJbC, na.rm = TRUE)),
-    yearly_EarnS = mean(EarnS, na.rm = TRUE)
+    avg_Emp = round(mean(EmpTotal, na.rm = TRUE)),
+    avg_FrmJbC = round(mean(FrmJbC, na.rm = TRUE)),
+    avg_EarnS = mean(EarnS, na.rm = TRUE)
+  )
+
+## for the Texas workforce dataset
+clean_wf_tx_data <-
+  workforce_tx_data |>
+  ## selection of analysis period and sector-level
+  filter(year > 2010 & year < 2024) |>
+  filter(ind_level == 4) |>
+  ## selection of variables of interest
+  select(industry, sex, education, year, quarter, EmpTotal, EarnS, FrmJbC) |>
+  ## replacing quarterly data with annual data by taking the mean value of the four quarters in a year
+  group_by(industry, sex, education, year) |>
+  summarise(
+    avg_Emp = round(mean(EmpTotal, na.rm = TRUE)),
+    avg_FrmJbC = round(mean(FrmJbC, na.rm = TRUE)),
+    avg_EarnS = mean(EarnS, na.rm = TRUE)
   )
 ```
 
@@ -194,9 +214,6 @@ emissions_data <- emissions_data |>
     `Total N20 Emissions` = sum(`Unit Nitrous Oxide (N2O) emissions`, na.rm = TRUE),
     `Number of firms` = n(),  
   )
-
-  
-
 ```
 
 ### Merging the two datasets
@@ -209,6 +226,9 @@ final_dataset <-
 ## Main target variable
 
 ## Research question
+
+
+
 
 
 

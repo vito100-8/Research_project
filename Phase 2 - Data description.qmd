@@ -19,6 +19,7 @@ library(dplyr)
 library(knitr)
 library(kableExtra)
 library(readr)
+library(ggplot2)
 ```
 
 ## Adding the data
@@ -199,31 +200,62 @@ emissions_data <- emissions_data |>
 
 #agregating the database into a subsectors (NAICS 4) level
 
-emissions_data <- emissions_data |> 
+clean_em_data <- emissions_data |> 
   filter(State == "CA") |>  # We only keep Californian firms
   mutate(
-    `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4),
-    `Unit CO2 emissions (non-biogenic)` = parse_number(`Unit CO2 emissions (non-biogenic)`),  # To avoid issues     with the NA numbers during the sum after
+    `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4), #agregation at NAICS 4 level
+    # To avoid issues with the NA numbers during the sum after with parse number (convert from character to numerical)
+    `Unit CO2 emissions (non-biogenic)` = parse_number(`Unit CO2 emissions (non-biogenic)`),  
     `Unit Methane (CH4) emissions` = parse_number(`Unit Methane (CH4) emissions`),
     `Unit Nitrous Oxide (N2O) emissions` = parse_number(`Unit Nitrous Oxide (N2O) emissions`),
   ) |> 
-  group_by(`NAICS 4 (subsectors)`, `Reporting Year`, `Unit Type`) |>  # Group by NAICS subsectors and reporting year
+  # Group by NAICS subsectors, reporting year and unit type
+  group_by(`NAICS 4 (subsectors)`, `Reporting Year`) |> 
   summarise(
+    #We keep our values of interest
     `Total CO2 Emissions (non_biogenic)` = sum(`Unit CO2 emissions (non-biogenic)`, na.rm = TRUE), 
     `Total CH4 Emissions` = sum(`Unit Methane (CH4) emissions`, na.rm = TRUE),
     `Total N20 Emissions` = sum(`Unit Nitrous Oxide (N2O) emissions`, na.rm = TRUE),
     `Number of firms` = n(),  
   )
+
+#changing variable names to have them similar across the two datasets
+clean_em_data <- clean_em_data |>
+  rename(year = `Reporting Year`)
+clean_em_data <- clean_em_data |> 
+  rename(industry = `NAICS 4 (subsectors)`)
 ```
 
 ### Merging the two datasets
 
 ```{r}
-final_dataset <-
-  
+#Merging the two using wf data as master, so we can keep all observations from the latter dataset
+joined_dataset <- clean_wf_data  |>
+  left_join(clean_em_data)
 ```
 
+
 ## Main target variable
+
+
+```{r}
+#Graphical representation by sectors that are energy-producing
+joined_dataset <- joined_dataset |> mutate(
+    `NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all")
+
+joined_dataset |> 
+  filter(!is.na(`Total CO2 Emissions (non_biogenic)`)) |>
+  ggplot(aes( x =  `Total CO2 Emissions (non_biogenic)`, color = `NAICS2  (sectors)`, fill = `NAICS2  (sectors)`) ) +
+  geom_density( na.rm = TRUE) + 
+  scale_x_log10() +
+  facet_wrap(vars(`NAICS2  (sectors)`))
+
+
+
+```
+
+
+
 
 ## Research question
 

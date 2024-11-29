@@ -112,7 +112,8 @@ emissions_summary |>
 ```{r}
 #| echo: false
 #Summary table for workforce
-workforce_summary <- workforce_data |>
+##workforce summary for California
+workforce_summary_CA <- workforce_data |>
   summarise(
     "Number of rows" = nrow(workforce_data),
     "Number of columns" = ncol(workforce_data),
@@ -123,9 +124,24 @@ workforce_summary <- workforce_data |>
     "Total number of missing values across the sheet" = sum(sapply(workforce_data, function(x) sum(is.na(x))))
   )
 
+##workforce summary for Texas
+workforce_summary_CA <- workforce_data |>
+  summarise(
+    "Number of rows" = nrow(workforce_data),
+    "Number of columns" = ncol(workforce_data),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Quarterly",
+    "Extremums of employment (Quarterly)" = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
+    "Number of industry (NAICS 4)" = length(unique(industry)),
+    "Total number of missing values across the sheet" = sum(sapply(workforce_data, function(x) sum(is.na(x))))
+  )
+
+## Table of join summaries
+
 workforce_summary |>
   kable("html", caption = "Workforce database information") |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
+
 ```
 
 ## Description of key variables
@@ -181,7 +197,7 @@ emissions_data <- emissions_data |>
 #agregating the database into a subsectors (NAICS 4) level
 
 clean_em_data <- emissions_data |> 
-  filter(State == "CA") |>  # We only keep Californian firms
+  filter(State == "CA" | State == "TX") |>  # We only keep Californian firms
   mutate(
     `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4), #agregation at NAICS 4 level
     # To avoid issues with the NA numbers during the sum after with parse number (convert from character to numerical)

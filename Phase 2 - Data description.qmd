@@ -114,35 +114,74 @@ emissions_summary |>
 ```{r}
 #| echo: false
 #Summary table for workforce
+
 ##workforce summary for California
-workforce_summary_CA <- workforce_data |>
+workforce_ca_summary <- workforce_ca_data |>
   summarise(
-    "Number of rows" = nrow(workforce_data),
-    "Number of columns" = ncol(workforce_data),
+    "State" = "California",
+    "Number of rows" = nrow(workforce_ca_data),
+    "Number of columns" = ncol(workforce_ca_data),
     "Period" = paste(range(year), collapse= " - "),
     "Periodicity" = "Quarterly",
     "Extremums of employment (Quarterly)" = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
     "Number of industry (NAICS 4)" = length(unique(industry)),
-    "Total number of missing values across the sheet" = sum(sapply(workforce_data, function(x) sum(is.na(x))))
+    "Total number of missing values across the sheet" = sum(sapply(workforce_ca_data, function(x) sum(is.na(x))))
   )
 
 ##workforce summary for Texas
-workforce_summary_CA <- workforce_data |>
+workforce_tx_summary <- workforce_tx_data |>
   summarise(
-    "Number of rows" = nrow(workforce_data),
-    "Number of columns" = ncol(workforce_data),
+    "State" = "Texas",
+    "Number of rows" = nrow(workforce_tx_data),
+    "Number of columns" = ncol(workforce_tx_data),
     "Period" = paste(range(year), collapse= " - "),
     "Periodicity" = "Quarterly",
     "Extremums of employment (Quarterly)" = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
     "Number of industry (NAICS 4)" = length(unique(industry)),
-    "Total number of missing values across the sheet" = sum(sapply(workforce_data, function(x) sum(is.na(x))))
+    "Total number of missing values across the sheet" = sum(sapply(workforce_tx_data, function(x) sum(is.na(x))))
   )
 
-## Table of join summaries
+## Table of each summary
+workforce_summary <- bind_rows(workforce_ca_summary, workforce_tx_summary)
+
 
 workforce_summary |>
   kable("html", caption = "Workforce database information") |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+```{r}
+## Join California and Texas and  summary of this join
+### Joining the two datasets
+
+#### Giving geography the same class for both in order to bind rows (it was double for Texas and character for California previously)
+workforce_tx_data <- workforce_tx_data |>
+  mutate(geography = as.character(geography))
+
+
+workforce_ca_tx <- bind_rows(
+  workforce_ca_data |> mutate(Region = "California"),
+  workforce_tx_data |> mutate(Region = "Texas"))
+
+### Summarizing the combined dataset
+workforce_ca_tx_summary <- workforce_ca_tx |>
+  summarise(
+    "Region" = "California, Texas",
+    `Number of rows` = nrow(workforce_ca_tx),
+    `Number of columns` = ncol(workforce_ca_tx),
+    Period = paste(range(year), collapse= " - "),
+    Periodicity = "Quarterly",
+    `Extremums of employment (Quarterly)` = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
+    `Number of industry (NAICS 4)` = length(unique(industry)),
+    `Total number of missing values across the sheet` = sum(sapply(workforce_ca_tx, function(x) sum(is.na(x))))
+  )
+
+### Displaying the combined summary
+workforce_ca_tx_summary |>
+  kable("html", caption = "Combined Workforce Database Information") |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
+
 
 ```
 
@@ -177,9 +216,9 @@ clean_wf_ca_data <-
   filter(year > 2010 & year < 2024) |>
   filter(ind_level == 4) |>
   ## selection of variables of interest
-  select(industry, sex, education, year, quarter, EmpTotal, EarnS, FrmJbC) |>
+  select(industry, sex, education, year, quarter,geography, EmpTotal, EarnS, FrmJbC) |>
   ## replacing quarterly data with annual data by taking the mean value of the four quarters in a year
-  group_by(industry, sex, education, year) |>
+  group_by(industry, sex, education, year, geography) |>
   summarise(
     avg_Emp = round(mean(EmpTotal, na.rm = TRUE)),
     avg_FrmJbC = round(mean(FrmJbC, na.rm = TRUE)),
@@ -193,9 +232,9 @@ clean_wf_tx_data <-
   filter(year > 2010 & year < 2024) |>
   filter(ind_level == 4) |>
   ## selection of variables of interest
-  select(industry, sex, education, year, quarter, EmpTotal, EarnS, FrmJbC) |>
+  select(industry, sex, education, year, quarter, geography, EmpTotal, EarnS, FrmJbC) |>
   ## replacing quarterly data with annual data by taking the mean value of the four quarters in a year
-  group_by(industry, sex, education, year) |>
+  group_by(industry, sex, education, year, geography) |>
   summarise(
     avg_Emp = round(mean(EmpTotal, na.rm = TRUE)),
     avg_FrmJbC = round(mean(FrmJbC, na.rm = TRUE)),
@@ -217,7 +256,7 @@ emissions_data <- emissions_data |>
 #agregating the database into a subsectors (NAICS 4) level
 
 clean_em_data <- emissions_data |> 
-  filter(State == "CA" | State == "TX") |>  # We only keep Californian firms
+  filter(State == "CA" | State == "TX") |>  # We only keep Californian and Texas firms
   mutate(
     `NAICS 4 (subsectors)` = substr(`Primary NAICS Code`, 1, 4), #agregation at NAICS 4 level
     # To avoid issues with the NA numbers during the sum after with parse number (convert from character to numerical)
@@ -226,7 +265,7 @@ clean_em_data <- emissions_data |>
     `Unit Nitrous Oxide (N2O) emissions` = parse_number(`Unit Nitrous Oxide (N2O) emissions`),
   ) |> 
   # Group by NAICS subsectors, reporting year and unit type
-  group_by(`NAICS 4 (subsectors)`, `Reporting Year`) |> 
+  group_by(`NAICS 4 (subsectors)`, `Reporting Year`, State) |> 
   summarise(
     #We keep our values of interest
     `Total CO2 Emissions (non_biogenic)` = sum(`Unit CO2 emissions (non-biogenic)`, na.rm = TRUE), 
@@ -242,29 +281,48 @@ clean_em_data <- clean_em_data |>
   rename(industry = `NAICS 4 (subsectors)`)
 ```
 
-### Merging the two datasets
+### Merging datasets
 
 ```{r}
-#Merging the two using wf data as master, so we can keep all observations from the latter dataset
-joined_dataset <- clean_wf_data  |>
-  left_join(clean_em_data)
+#Combining the two workforces datasets
+
+##Bind rows to have in a single dataset both state workforce data (identified by the geography variable)
+join_wf_data <- bind_rows(clean_wf_tx_data, clean_wf_ca_data)
+
+## Rename geography into a state variable as in the emission dataset to be able to merge with this variable as well
+join_wf_data <- join_wf_data |> 
+  mutate(State = if_else(geography == "48", "TX", "CA") ) |>
+  select(!geography)
+  
+
 ```
 
+
+```{r}
+#Merging emissions and workforce datasets using workforce data as master, so we can keep all observations from the latter dataset
+joined_dataset <- left_join( join_wf_data, clean_em_data)
+
+## Cleaning for the NA values of Emissions
+joined_dataset <- joined_dataset |> filter(is.na(`Total CO2 Emissions (non_biogenic)`) == FALSE)
+
+```
+
+We now have our join database combined of worforce and emissions previous datasets
 
 ## Main target variable
 
 
 ```{r}
 #Graphical representation by sectors that are energy-producing
-joined_dataset <- joined_dataset |> mutate(
-    `NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all")
+#joined_dataset <- joined_dataset |> mutate(
+ #   `NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all")
 
-joined_dataset |> 
-  filter(!is.na(`Total CO2 Emissions (non_biogenic)`)) |>
-  ggplot(aes( x =  `Total CO2 Emissions (non_biogenic)`, color = `NAICS2  (sectors)`, fill = `NAICS2  (sectors)`) ) +
-  geom_density( na.rm = TRUE) + 
-  scale_x_log10() +
-  facet_wrap(vars(`NAICS2  (sectors)`))
+#oined_dataset |> 
+  #filter(!is.na(`Total CO2 Emissions (non_biogenic)`)) |>
+  #ggplot(aes( x =  `Total CO2 Emissions (non_biogenic)`, color = `NAICS2  (sectors)`, fill = `NAICS2  (sectors)`) ) +
+  #geom_density( na.rm = TRUE) + 
+  #scale_x_log10() +
+  #facet_wrap(vars(`NAICS2  (sectors)`))
 
 
 

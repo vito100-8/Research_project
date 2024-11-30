@@ -367,6 +367,13 @@ joined_dataset |>
 
 ## Research question
 
+We will be investigating the relationship between workforce characteristics (employment count, wage) and CO2 emissions in energy-producing firms in California and Texas from 2011 to 2023.
+
+We choose this time periode because our emission dataset covers years from 2010 to 2023 but the first year had sparse data. Thus we decided to delete the year, which should not induce any major changes in further analyses.
+
+We firstly chose California as a huge polluting state (second most important emitter of C02) making efforts to transition towards clean energies as it introduced a cap-and-trade program in 2015 to regulate emissions . On the contrary, Texas is the leading energy productor in the U.S. that still relies in majority on fossil fuels (most important emitter of C02). Studying these two states together allows for understanding  the role of workforce characteristics in shaping CO2 emissions under different regulatory environments. 
+
+In other words, we chose the two states that are the biggest emitters to compare the underlying workforce factors that influence these emissions, Texas and California having different views and policies regarding those emissions.
 
 
 

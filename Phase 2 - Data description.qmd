@@ -367,14 +367,32 @@ joined_dataset |>
 
 ## Research question
 
-We will be investigating the relationship between workforce characteristics (employment count, wage) and CO2 emissions in energy-producing firms in California and Texas from 2011 to 2023.
+We will be investigating the relationship between workforce characteristics (employment count, wage...) and CO2 emissions in energy-producing firms in California and Texas from 2011 to 2023.
 
-We choose this time periode because our emission dataset covers years from 2010 to 2023 but the first year had sparse data. Thus we decided to delete the year, which should not induce any major changes in further analyses.
+We choose this time period because our emission dataset covers years from 2010 to 2023 but the first year had sparse data. Thus we decided to delete the year, which should not induce any major changes in further analyses.
 
-We firstly chose California as a huge polluting state (second most important emitter of C02) making efforts to transition towards clean energies as it introduced a cap-and-trade program in 2015 to regulate emissions . On the contrary, Texas is the leading energy productor in the U.S. that still relies in majority on fossil fuels (most important emitter of C02). Studying these two states together allows for understanding  the role of workforce characteristics in shaping CO2 emissions under different regulatory environments. 
+For this study, we plan on conducting a panel analysis to have more information and to study the evolution in behavior of each industries over time. It will allow us to analyse the heterogeneity of responses of these industries (i.e. if some of them are more responsive to tax on their emissions than others). 
 
-In other words, we chose the two states that are the biggest emitters to compare the underlying workforce factors that influence these emissions, Texas and California having different views and policies regarding those emissions.
+We firstly chose California as a huge polluting state (second most important emitter of C02) making efforts to transition towards clean energies as it introduced a cap-and-trade program in 2015 to regulate emissions . On the contrary, Texas is the leading energy supplier in the U.S. that still relies in majority on fossil fuels (most important emitter of C02). Studying these two states together allows for understanding  the role of workforce characteristics in shaping CO2 emissions under different regulatory environments. 
 
+In other words, we chose the two states that are the biggest emitters to compare the underlying workforce factors that influence these emissions, Texas and California having different policies and regulations regarding those emissions.
+
+There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `avg_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions. 
+
+We chose to use this variable as a proxy for workforce skill level and investment in human capital. The idea behind this is that "greener jobs" (so here represented by jobs associated with firms emitting relatively low levels of C02) tends to hire more skilled workers (see [Bowen et al., 2018](https://www.sciencedirect.com/science/article/pii/S0140988318300963), [Elliott and Lindley (2017)](https://www.sciencedirect.com/science/article/abs/pii/S0921800916311442)) with higher wages associated. Hence the analysis of the relationship between wages and carbon emissions
+
+The aim here is also to check if that relationship is also true in energy producing industries, where greener jobs are associated with better production technologies and the type of energy produced.
+
+Other key variable is Net employment change (`avg_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
+
+We will also create dummies to separate our analysis in groups : 
+- `State`will be divided in two (California and Texas)
+- A policy dummy will be added to study the impact of new regulation aimed at reducing emissions, we will study the heterogeneity of response depending on the industry
+- Separate industries according to whether it produces renewable energy or not.
+
+Finally, controle variables will be implemented to capture unwanted effect such as `year` (erasing the special effect of being in a given year). 
+
+The formal construction of our model will be described in the next phase.
 
 
 

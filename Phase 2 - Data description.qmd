@@ -1,17 +1,15 @@
 ---
 title: "Phase 2 - Data description"
 format: html
-editor: 
-  markdown: 
-    wrap: sentence
 ---
-
-## Libraries
 
 ```{r}
 #| echo: false
 #| message: false
 #| warning: false
+
+#Libraries
+
 library(vroom)
 library(here)
 library(tidyr)
@@ -23,12 +21,29 @@ library(ggplot2)
 library(httr2)
 ```
 
+```{r}
+#| echo: false
+#| message: false
 
-## Adding the data
+# Creation of zip file
+
+### set the working directory to the project folder
+setwd("C:/Users/admin/Documents/Dauphine M1 AID/Data Management & Programming/Research_project")
+
+### add the files to the project folder
+research_project_files <- list.files(".", recursive = TRUE, full.names = TRUE)
+
+### creating the zip file
+zip("Research_project.zip", files = research_project_files)
+```
+
 
 ```{r}
 #| echo: false
 #| message: false
+
+# Adding the data
+
 emissions_data <- vroom(here("data", "emissions_by_unit_and_fuel_type_c_d_aa.csv"))
 workforce_ca_data <- vroom(here("data", "qwi_ca_se_f_gs_n4_oslp_u.csv"))
 workforce_tx_data <- vroom(here("data", "qwi_tx_se_f_gs_n4_oslp_u.csv"))
@@ -45,6 +60,7 @@ You can find our github repository here : [Research Project](https://github.com/
 
 Due to our use of very large data files, we used Git LFS (Large File Storage) that allowed us to push our data into the project repository.
 
+All the datasets that we use are uploaded on Github.
 
 ### Some infos about the data sources
 
@@ -88,9 +104,9 @@ We needed to unzip it and create a CSV manually because the native file containe
 
 Quarterly Workforce Indicators (QWI) Data : [US Census Bureau](https://lehd.ces.census.gov/data/#qwi).
 
-For the State of California :[California_WF](https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_ca_se_f_gs_n4_oslp_u.csv.gz).
+For the State of California : [California_WF](https://lehd.ces.census.gov/data/qwi/latest_release/ca/qwi_ca_se_f_gs_n4_oslp_u.csv.gz).
 
-For the State of Texas : [Texas_WF](https://lehd.ces.census.gov/data/qwi/latest_release/al/qwi_tx_se_f_gs_n4_oslp_u.csv.gz).
+For the State of Texas : [Texas_WF](https://lehd.ces.census.gov/data/qwi/latest_release/tx/qwi_tx_se_f_gs_n4_oslp_u.csv.gz).
 
 We manually unzipped these two datafiles before loading it into R. 
 
@@ -198,14 +214,18 @@ workforce_ca_tx_summary |>
 ### Emissions dataset
 
 `Primary NAICS Code` : this variable identifies each firm and will allow us to merge the two datasets by agregating each firm into a NAICS code 4 (at the level of industries).
+
 `Unit CO2 emissions (non-biogenic)`: gives the quantity of CO2 emissions for each unit (described by the variables `Unit Name` and `Unit Type`) of each firm for a given year
 
 
 ### Workforce datasets
 
 `industry`: NAICS 4 code that identifies the industries
+
 `geography`: geography code that identifies the state
+
 `EmpTotal`: the variable counts the estimated number of people employed in a firm at any time during the quarter according to the subsector, age and sex categories (we will agregate those specifications later on)
+
 `EarnS` : gives us the average monthly earnings of employees with stable jobs (in dollars)
 
 
@@ -214,7 +234,7 @@ workforce_ca_tx_summary |>
 
 ### Merge preparation for the workforce dataset (California and Texas)
 
-To match with the more restricted time period covered by the `emissions_data` dataset, we started by reducing the time period covered by the `workforce_ca_data` and the `workforce_tx_data`datasets to be between 2011 and 2023. 
+To match with the more restricted time period covered by the `emissions_data` dataset, we started by reducing the time period covered by the `workforce_ca_data` and the `workforce_tx_data`datasets to be between 2013 and 2023.
 
 The `industry` variable in the `emissions_data` dataset contains NAICS4 level industry codes. We therefore filtered the two workforce datasets to show only the observations when `ind_level` was equal to 4 (which corresponds to NAICS 4). 
 
@@ -230,7 +250,7 @@ The new average annual variables are ; `avg_Emp` for the average annual Employme
 clean_wf_ca_data <-
   workforce_ca_data |>
   ### selection of analysis period and sector-level
-  filter(year > 2010 & year < 2024) |>
+  filter(year > 2012 & year < 2024) |>
   filter(ind_level == 4) |>
   ### selection of variables of interest
   select(industry, sex, education, year, quarter,geography, EmpTotal, EarnS, FrmJbC) |>
@@ -246,7 +266,7 @@ clean_wf_ca_data <-
 clean_wf_tx_data <-
   workforce_tx_data |>
   ### selection of analysis period and sector-level
-  filter(year > 2010 & year < 2024) |>
+  filter(year > 2012 & year < 2024) |>
   filter(ind_level == 4) |>
   ### selection of variables of interest
   select(industry, sex, education, year, quarter, geography, EmpTotal, EarnS, FrmJbC) |>
@@ -267,8 +287,8 @@ clean_wf_tx_data <-
 
 ## filtering the initial data
 emissions_data <- emissions_data |>
-  ### keeping only data from 2011 - 2023 
-  filter(`Reporting Year` > 2010)
+  ### keeping only data from 2013 - 2023 
+  filter(`Reporting Year` > 2012)
 
 
 emissions_data <- emissions_data |>
@@ -312,7 +332,7 @@ After we cleaned up the datasets, we first merged the `clean_wf_tx_data` and the
 
 To be able to execute the second merge with the `clean_em_data` dataset, we also renamed `geography` to `State` and changed the observations, which were geography codes, to the abbreviation of the state name, as it figures in the `clean_em_data` dataset.
 
-Finally, we did a `left_join()` merge of the two final datasets. As the workforce datasets contained observations for all industry sectors, while the `èmissions_data` dataset only contained observations for energy producing sectors, we did a final filtering to drop the missing values corresponding to non-energy producing sectors. 
+Finally, we did a `left_join()` merge of the two final datasets. As the workforce datasets contained observations for all industry sectors, while the `emissions_data` dataset only contained observations for energy producing sectors, we did a final filtering to drop the missing values corresponding to non-energy producing sectors. 
 
 ```{r}
 # Combining the two workforces datasets
@@ -332,8 +352,7 @@ join_wf_data <- join_wf_data |>
 joined_dataset <- left_join( join_wf_data, clean_em_data)
 
 # Cleaning for the missing values of emissions
-joined_dataset <- joined_dataset |> filter(is.na(`Total CO2 Emissions (non_biogenic)`) == FALSE)
-
+joined_dataset <- joined_dataset |> filter(!is.na(`Total CO2 Emissions (non_biogenic)`))
 ```
 
 We now have our joined database combined of the previous `emissions_data`, `workforce_ca_data` and `workforce_tx_data` datasets.
@@ -346,6 +365,8 @@ Our variable of interest is `CO2 emissions (non biogenic)`. To better analyze it
 We constructed two charts :  
   - the first chart describes the evolution over time of `CO2 emissions (non biogenic)` for each `State`. We added a `NAICS2  (sectors)` variable to compute the absolute contribution of each sector(NAICS 2) for each state in a given year.
   - the second chart explores the relative contribution of each `State` in the total `CO2 emissions (non biogenic)` over the years.
+  
+The table between the two charts focuses on the sudden hike of CO2 emission in Texas between 2017 and 2018.
 
 ```{r}
 #| echo: false
@@ -354,22 +375,43 @@ We constructed two charts :
 joined_dataset |>
   mutate(
     `NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all") |>
+  filter(year > 2012) |>
   ggplot(aes(x = year, y = `Total CO2 Emissions (non_biogenic)`, fill = `NAICS2  (sectors)`)) +
   geom_col() +
-  facet_wrap(vars(State), scales = "free_y")
+  ## We let the two subcharts have different scales 
+  facet_wrap(vars(State), scales = "free_y") + 
+  labs(title = "Total CO2 Emissions of energy producers by State")
+
+# Table to analyse the drivers of sudden C02 emissions hike in Texas between 2017 and 2018
+driver_emissions_hike <- joined_dataset |> 
+  mutate(`NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all") |>
+  filter(State == "TX" & year > 2016 & year < 2019) |>
+  group_by(year, `NAICS2  (sectors)`) |> 
+  summarize("Number of firms" = n(),
+            "Total sector emissions" = sum(`Total CO2 Emissions (non_biogenic)`))
+
+driver_emissions_hike |>
+  kable("html", caption = "What cause a massive increase in Texas emissions between 2017 and 2018 ?") |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
+## It confirms the previous visualization : sector 21 (Mining, Quarrying, and oil and Gas extraction) is emitting a lot more between those years
 
 # Same scale comparison : Texas vs California participation in C02 emissions
 joined_dataset |>
   ggplot(aes(x = year, y = `Total CO2 Emissions (non_biogenic)`, fill = State)) +
-  geom_col(position = "fill")
+  geom_col(position = "fill") +
+  labs(title = "Texas vs California particpation in total C02 emissions")
 ```
 
+The main findings are : 
+- The contribution of each industry in `CO2 emissions (non biogenic)` seems different across `State` (for example sector 32, manufacturing, appears to contribute a lot more to emissions in California than in Texas).
+- The sudden increase in `CO2 emissions (non biogenic)` in Texas in 2018 seems to be caused by increased emissions in sector 21 (Mining, Quarrying, and oil and Gas extraction).
+-Overall, Texas' firms are emitting a lot more in absolute value than the Californian ones, and this difference appears to be increasing over the period.
 
 ## Research question
 
-We will be investigating the relationship between workforce characteristics (employment count, wage...) and CO2 emissions in energy-producing firms in California and Texas from 2011 to 2023.
+We will be investigating the relationship between workforce characteristics (employment count, wage...) and CO2 emissions in energy-producing firms in California and Texas from 2013 to 2023.
 
-We choose this time period because our emission dataset covers years from 2010 to 2023 but the first year had sparse data. Thus we decided to delete the year, which should not induce any major changes in further analyses.
+We chose this time period because our emissions dataset covers years from 2010 to 2023 but the first years had sparse data. Thus we decided to delete those years for clarity's sake, which should not induce any major changes in further analyses.
 
 For this study, we plan on conducting a panel analysis to have more information and to study the evolution in behavior of each industries over time. It will allow us to analyse the heterogeneity of responses of these industries (i.e. if some of them are more responsive to tax on their emissions than others). 
 
@@ -385,12 +427,15 @@ The aim here is also to check if that relationship is also true in energy produc
 
 Other key variable is Net employment change (`avg_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
 
-We will also create dummies to separate our analysis in groups : 
+We will also create dummies to separate our analysis in groups :
+
 - `State`will be divided in two (California and Texas)
+
 - A policy dummy will be added to study the impact of new regulation aimed at reducing emissions, we will study the heterogeneity of response depending on the industry
+
 - Separate industries according to whether it produces renewable energy or not.
 
-Finally, controle variables will be implemented to capture unwanted effect such as `year` (erasing the special effect of being in a given year). 
+Finally, control variables will be implemented to capture unwanted effect such as `year` (erasing the special effect of being in a given year). 
 
 The formal construction of our model will be described in the next phase.
 

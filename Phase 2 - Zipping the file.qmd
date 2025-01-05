@@ -1,0 +1,48 @@
+---
+title: "Zip file creation"
+format: html
+editor: visual
+ 
+---
+## Creation of the zip file
+
+```{r}
+
+#| echo: false
+#| message: false
+
+# Set the working directory to the project folder
+setwd(here())
+
+# We select the data folder
+data_folder <- "data"  
+
+# putting all data files in the folder
+data_files <- list.files(data_folder, full.names = TRUE, recursive = TRUE)
+
+# Listing all the files we include in the zip
+files_to_zip <- c(
+  "Research_project.Rproj",
+  data_files,
+  "Phase 2 - Data description_files",
+  "Phase 2 - Data description.qmd",
+  "Phase 2 - Data description.html",
+  "README.md"
+)
+
+zip_file_name <- "Research_project.zip"
+
+# Creating the zip archive
+zip(zip_file_name, files_to_zip)
+
+# To have the confirmation that it works
+if (file.exists(zip_file_name)) {
+  message("Successfully created ", zip_file_name)
+}else{
+  message("Failed to create the zip file.")
+}
+
+
+
+```
+

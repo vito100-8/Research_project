@@ -21,22 +21,6 @@ library(ggplot2)
 library(httr2)
 ```
 
-```{r}
-#| echo: false
-#| message: false
-
-# Creation of zip file
-
-### set the working directory to the project folder
-setwd("C:/Users/admin/Documents/Dauphine M1 AID/Data Management & Programming/Research_project")
-
-### add the files to the project folder
-research_project_files <- list.files(".", recursive = TRUE, full.names = TRUE)
-
-### creating the zip file
-zip("Research_project.zip", files = research_project_files)
-```
-
 
 ```{r}
 #| echo: false
@@ -363,7 +347,9 @@ We now have our joined database combined of the previous `emissions_data`, `work
 Our variable of interest is `CO2 emissions (non biogenic)`. To better analyze its relationship with the other variables we will use, we first need to represent its distribution and its characteristics. 
 
 We constructed two charts :  
+
   - the first chart describes the evolution over time of `CO2 emissions (non biogenic)` for each `State`. We added a `NAICS2  (sectors)` variable to compute the absolute contribution of each sector(NAICS 2) for each state in a given year.
+  
   - the second chart explores the relative contribution of each `State` in the total `CO2 emissions (non biogenic)` over the years.
   
 The table between the two charts focuses on the sudden hike of CO2 emission in Texas between 2017 and 2018.
@@ -403,9 +389,12 @@ joined_dataset |>
 ```
 
 The main findings are : 
+
 - The contribution of each industry in `CO2 emissions (non biogenic)` seems different across `State` (for example sector 32, manufacturing, appears to contribute a lot more to emissions in California than in Texas).
+
 - The sudden increase in `CO2 emissions (non biogenic)` in Texas in 2018 seems to be caused by increased emissions in sector 21 (Mining, Quarrying, and oil and Gas extraction).
--Overall, Texas' firms are emitting a lot more in absolute value than the Californian ones, and this difference appears to be increasing over the period.
+
+- Overall, Texas' firms are emitting a lot more in absolute value than the Californian ones, and this difference appears to be increasing over the period.
 
 ## Research question
 

@@ -111,7 +111,8 @@ emissions_summary <- emissions_data |>
     "Number of sectors" = n_distinct(unlist(strsplit(paste(`Industry Type (sectors)`, collapse = ","), ",\\s*"))), 
     "Number of subparts" = n_distinct(unlist(strsplit(paste(`Industry Type (subparts)`, collapse = ","), ",\\s*"))),
     "Number of different companies" = length(unique(`Primary NAICS Code`)),
-    "Total number of missing values across the sheet" = sum(sapply(emissions_data, function(x) sum(is.na(x))))
+    "Total number of missing values across the sheet" = sum(sapply(emissions_data, function(x) sum(is.na(x)))),
+    "Missing values in CO2 emissions" = sum(is.na(`Unit CO2 emissions (non-biogenic)`))
   )
 
 emissions_summary |>
@@ -133,7 +134,9 @@ workforce_ca_summary <- workforce_ca_data |>
     "Periodicity" = "Quarterly",
     "Extremums of employment (Quarterly)" = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
     "Number of industry (NAICS 4)" = length(unique(industry)),
-    "Total number of missing values across the sheet" = sum(sapply(workforce_ca_data, function(x) sum(is.na(x))))
+    "Total number of missing values across the sheet" = sum(sapply(workforce_ca_data, function(x) sum(is.na(x)))),
+    "Missing values of Total Employment" = sum(is.na(EmpTotal)),
+    "Missing values of Monthly earnings" = sum(is.na(EarnS))
   )
 
 ## workforce summary for Texas
@@ -146,7 +149,9 @@ workforce_tx_summary <- workforce_tx_data |>
     "Periodicity" = "Quarterly",
     "Extremums of employment (Quarterly)" = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
     "Number of industry (NAICS 4)" = length(unique(industry)),
-    "Total number of missing values across the sheet" = sum(sapply(workforce_tx_data, function(x) sum(is.na(x))))
+    "Total number of missing values across the sheet" = sum(sapply(workforce_tx_data, function(x) sum(is.na(x)))),
+    "Missing values of Total Employment" = sum(is.na(EmpTotal)),
+    "Missing values of Monthly earnings" = sum(is.na(EarnS))
   )
 
 ## Table of each summary
@@ -157,6 +162,9 @@ workforce_summary |>
   kable("html", caption = "Workforce database information") |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
 ```
+
+
+### Joining the workforce datasets and summarizing it
 
 ```{r}
 #| echo: false
@@ -182,14 +190,27 @@ workforce_ca_tx_summary <- workforce_ca_tx |>
     Periodicity = "Quarterly",
     `Extremums of employment (Quarterly)` = paste(range(EmpTotal, na.rm = TRUE), collapse= " - "),
     `Number of industry (NAICS 4)` = length(unique(industry)),
-    `Total number of missing values across the sheet` = sum(sapply(workforce_ca_tx, function(x) sum(is.na(x))))
+    `Total number of missing values across the sheet` = sum(sapply(workforce_ca_tx, function(x) sum(is.na(x)))),
+    "Missing values of Total Employment" = sum(is.na(EmpTotal)),
+    "Missing values of Monthly earnings" = sum(is.na(EarnS))
   )
 
 ## Displaying the combined summary
-workforce_ca_tx_summary |>
+workforce_ca_tx_summary |> 
   kable("html", caption = "Combined Workforce Database Information") |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
 ```
+
+### About missing values
+
+For the CO2 emissions dataset it appears that the missing values appear in `FRS id`, `Unit Type` and `Unit Maximum Rated Heat Input Capacity (mmBTU/hr)` and none in our variables of interest  nor in the variables that will allow us to merge the two datasets. Those missing values come from information not available probably because the firms did not transmitted it to the EPA.
+
+For the workforce datasets we notice a huge amount of missing values accross the datasets, for our variables of interest we notice respectively 6942 and 26513 missing values for `EmpTotal`and `EarnS`. 
+The Quarterly workforce Indicators (QWI) uses data from "administrative records data collected by a large
+number of states for both jobs and firms, and enhanced with information integrated from other data
+sources at the Census Bureau" ([See source](https://lehd.ces.census.gov/doc/technical_paper/tp-2006-01.pdf)). Hence these indicators comes from sources used by the LEHD structure and, except for some variables such as `sex`, the missing values are not adressed nor treated; they represent non-available information or non-disclosed to the public. It appears that the more recent the data, the less there are missing values (considering the increasing data production over the recent years).
+
+
 
 
 ## Description of key variables
@@ -390,7 +411,7 @@ joined_dataset |>
 
 The main findings are : 
 
-- The contribution of each industry in `CO2 emissions (non biogenic)` seems different across `State` (for example sector 32, manufacturing, appears to contribute a lot more to emissions in California than in Texas).
+- The contribution of each industry in `CO2 emissions (non biogenic)` seems different across `State` (for example sector 32   , manufacturing, appears to contribute a lot more to emissions in California than in Texas).
 
 - The sudden increase in `CO2 emissions (non biogenic)` in Texas in 2018 seems to be caused by increased emissions in sector 21 (Mining, Quarrying, and oil and Gas extraction).
 

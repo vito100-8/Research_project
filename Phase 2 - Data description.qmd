@@ -197,7 +197,7 @@ workforce_ca_tx_summary |>
 
 ### Emissions dataset
 
-`Primary NAICS Code` : this variable identifies each firm and will allow us to merge the two datasets by agregating each firm into a NAICS code 4 (at the level of industries).
+`Primary NAICS Code` : this variable identifies each firm and will allow us to merge the two datasets by agregating each firm into a NAICS code 4 (at the level of industries). The North American Industry Classification System (NAICS) is a standardized system used by the U.S., Canada, and Mexico to classify business establishments based on their economic activities. 
 
 `Unit CO2 emissions (non-biogenic)`: gives the quantity of CO2 emissions for each unit (described by the variables `Unit Name` and `Unit Type`) of each firm for a given year
 
@@ -312,7 +312,7 @@ clean_em_data <- clean_em_data |>
 
 ### Merging datasets
 
-After we cleaned up the datasets, we first merged the `clean_wf_tx_data` and the `clean_wf_ca_data` datasets together to be stacked one under the other. This way, the observations from the two datasets can only be differenciated by the `geography column`, which contains the geopgraphy code correspondonding to the two chosen States. 
+After we cleaned up the datasets, we first merged the `clean_wf_tx_data` and the `clean_wf_ca_data` datasets together to be stacked one under the other. This way, the observations from the two datasets can only be differenciated by the `geography column`, which contains the geopgraphy code corresponding to the two chosen States.
 
 To be able to execute the second merge with the `clean_em_data` dataset, we also renamed `geography` to `State` and changed the observations, which were geography codes, to the abbreviation of the state name, as it figures in the `clean_em_data` dataset.
 
@@ -348,7 +348,7 @@ Our variable of interest is `CO2 emissions (non biogenic)`. To better analyze it
 
 We constructed two charts :  
 
-  - the first chart describes the evolution over time of `CO2 emissions (non biogenic)` for each `State`. We added a `NAICS2  (sectors)` variable to compute the absolute contribution of each sector(NAICS 2) for each state in a given year.
+  - the first chart describes the evolution over time of `CO2 emissions (non biogenic)` for each `State`. We added a `NAICS2  (sectors)` variable to compute the absolute contribution of each sector(NAICS 2) for each state in a given year.  Additionnal information on the NAICS structure can be found at the following link : [Description of NAICS 2 sectors](https://www.census.gov/naics/?58967?yearbck=2022)
   
   - the second chart explores the relative contribution of each `State` in the total `CO2 emissions (non biogenic)` over the years.
   
@@ -398,7 +398,13 @@ The main findings are :
 
 ## Research question
 
-We will be investigating the relationship between workforce characteristics (employment count, wage...) and CO2 emissions in energy-producing firms in California and Texas from 2013 to 2023.
+We will be investigating the relationship between workforce characteristics (employment count, wage...) and CO2 emissions in energy-producing firms in California and Texas from 2013 to 2023. We distinguish three types of energy-producing firms according to the data source : 
+
+- Direct emitters, which correspond to facilities that combust fuels or otherwise put green house gases into the atmosphere directly from their facility (ex. power plants).
+
+- Energy suppliers that supply products into the economy which emit greenhouse gases into the atmosphere, when combusted or released (ex. gasoline production).
+
+- CO2 injection facilities, ie. wells that a CO2 stream into the subsurface (ex. oil pumping).
 
 We chose this time period because our emissions dataset covers years from 2010 to 2023 but the first years had sparse data. Thus we decided to delete those years for clarity's sake, which should not induce any major changes in further analyses.
 

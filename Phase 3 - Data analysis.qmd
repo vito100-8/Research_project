@@ -5,3 +5,30 @@ format:
   pdf: default
 ---
 
+## Introduction
+
+
+
+## Data Description
+
+
+
+## Graphical Analysis
+
+
+
+## Model Fitting
+
+
+
+## Testing the model
+
+
+
+## Extension of the model
+
+
+
+## Conclusion
+
+

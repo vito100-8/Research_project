@@ -5,9 +5,108 @@ format:
   pdf: default
 ---
 
-## Introduction
+## Methodology
 
+How do workforce characteristics, including wage levels, employment size, and net employment change, contribute to variations in CO2 emissions in energy-producing industries over time?
 
+In the first part of our analysis, we will focus on establishing a non-causal relationship between CO2 emissions, and industry characteristics (monthly average wage, industry size and net industry size change) using the Logarithmic Mean Divisia Index (LMDI) decomposition method to identify the contribution of different industry characteristics to changes in CO2 emissions. 
+
+The Logarithmic Mean Divisia Index is an analytical method that breaks down aggregate changes in a variable into several effects to identify the main drivers behind the changes in the variable of interest. Using the logarithmic mean, it allows for consistent results in the presence of zero or missing values. 
+THe LMDI can be applied in an additive or a multiplicative method : 
+The additive method consists in representing the absolute effect of a factor to the changes in the variable of interest. The total change in the variable of interest is expressed as the sum of the contributions of all the factors taken into account. 
+The multiplicative method corresponds to computing the relative contribution of each factor to the changes in the variable of interest (expressed in general in percentages). Then, the variable of interest is expressed as a product of the relative contributions of each variable. 
+
+In this case, we chose to use the Additive LMDI method given the nature of the factors. Indeed, industry and workforce characteristics such as wage and employment size vary in general in absolute terms, which makes the interpretation of their effect in the LMDI decomposition easier using the additive approach. Moreover, this approach makes a cross-sector or a temporal analysis more straightforward than the multiplicative one, where we would be comparing relative impacts across groups. ([Ang, 2015]( https://doi.org/10.1016/j.enpol.2015.07.007))
+
+In the second part of our analysis, we will try to identify the effect of the regulatory environment on CO2 emissions across industries. For this study, we plan on conducting a panel analysis to have more information and to study the evolution in behavior of each industry over time. It will allow us to analyse the heterogeneity of responses of these industries (i.e. if some of them are more responsive to tax on their emissions than others).
+
+To compare regulatory environments, we use California as a treatment group. California is a huge polluting state (second most important emitter of C02 in the US)that has been making efforts to transition towards clean energies as it introduced a cap-and-trade program in 2015 to regulate emissions. Our control group will be Texas, the leading energy supplier in the U.S. that still relies in majority on fossil fuels (most important emitter of C02 in the US). Studying these two states together allows for understanding how a change in environmental policy shapes CO2 emissions at a sectoral level. 
+
+```{r}
+#| message: false
+#| echo: false
+
+# Creating a Directed Acyclic Graph (DAG), displaying the causal relationships between the variables used in our model
+
+## Installing the packages for the DAG
+library(dagitty)
+library(ggdag)
+
+## Defining the DAG (first, defining the names and positions of the variables ie. "nodes", and then the orientation of the relations between them)
+dag <- dagitty("
+dag {
+  RegulatoryEnvironment [pos = \"0.5,1\"]
+  CO2Emissions [pos = \"1,0\"]
+  MonthlyAverageWage [pos = \"-0.25,0\"]
+  EmploymentSize [pos = \"-0.25,1.5\"]
+  NetEmploymentChange [pos = \"-0.25,-1.5\"]
+  IndustryType [pos = \"-1,0\"]
+  CapAndTradePolicy [pos = \"0.5,2.5\"]
+  California [pos = \"0.5,4\"]
+  Texas [pos = \"0.5,-2\"]
+
+  RegulatoryEnvironment -> MonthlyAverageWage
+  RegulatoryEnvironment -> EmploymentSize
+  RegulatoryEnvironment -> NetEmploymentChange
+  IndustryType -> MonthlyAverageWage
+  IndustryType -> EmploymentSize
+  IndustryType -> NetEmploymentChange
+  MonthlyAverageWage -> CO2Emissions
+  EmploymentSize -> CO2Emissions
+  NetEmploymentChange -> CO2Emissions
+  CapAndTradePolicy -> RegulatoryEnvironment
+  California -> RegulatoryEnvironment
+  Texas -> RegulatoryEnvironment
+}
+")
+
+## Defining a variable (vector-column) which assigns a color code to each "node"
+node_colors <- c(
+  "CO2Emissions" = "tomato",
+  "MonthlyAverageWage" = "skyblue",
+  "EmploymentSize" = "skyblue",
+  "NetEmploymentChange" = "skyblue",
+  "IndustryType" = "yellow",
+  "RegulatoryEnvironment" = "orange",
+  "CapAndTradePolicy" = "green",
+  "California" = "purple",
+  "Texas" = "purple"
+)
+
+## Plotting the causal diagram
+ggdag(dag, text = FALSE) +
+  geom_dag_node(aes(fill = name), shape = 21, size = 15, show.legend = FALSE) + ### fill according to node names
+  geom_dag_label(nudge_y = -0.3, size = 3) + ### positioning and resizing the label names
+  scale_fill_manual(values = node_colors) +  ### applying the custom color mapping to the nodes
+  ggtitle("Causal Diagram for CO2 Emissions Analysis") + ### giving a title to the plot
+  theme(plot.title = element_text(hjust = 0.25))
+```
+
+Variable of interest
+
+Our dependent variable will be `CO2 emissions (non biogenic)`, which corresponds to the unit of metric tons of CO2 (not issued from biomass) annually emitted by energy-producing facilities. 
+
+Energy-producing firms can be divided in three groups :
+
+- Direct emitters, which correspond to facilities that combust fuels or otherwise put greenhouse gases into the atmosphere directly from their facility (ex. power plants).
+
+- Energy suppliers that supply products into the economy which emit greenhouse gases into the atmosphere, when combusted or released (ex. gasoline production).
+
+- CO2 injection facilities, ie. wells that a CO2 stream into the subsurface (ex. oil pumping).
+
+Independent variables
+
+There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `avg_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
+
+We chose to use `avg_EarnS` as a proxy for workforce skill level and investment in human capital. The idea behind this is that "greener jobs" (so here represented by jobs associated with firms emitting relatively low levels of C02) tends to hire more skilled workers (see [Bowen et al., 2018](https://www.sciencedirect.com/science/article/pii/S0140988318300963), [Elliott and Lindley (2017)](https://www.sciencedirect.com/science/article/abs/pii/S0921800916311442)) with higher wages associated. Therefore, we expect a negative relationship between wage and CO2 emissions. 
+
+Another key variable is Net employment change (`avg_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
+
+Additionnally, we create dummies to separate our analysis in groups :
+
+- `State` is divided in two (California and Texas)
+
+- A policy dummy was added to study the impact of new regulations aimed at reducing emissions. We will study the heterogeneity of response depending on the industry.
 
 ## Data Description
 

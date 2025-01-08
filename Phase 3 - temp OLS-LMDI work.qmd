@@ -1,0 +1,381 @@
+---
+title: "titre"
+format: html
+editor: visual
+---
+
+
+```{r}
+
+# Fit an OLS model
+test_data_21 <- joined_dataset |> 
+  mutate(`NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all")|>
+  filter(`NAICS2  (sectors)` == 21) |> rename ( `Total CO2 Emissions (non_biogenic) test` =  `Total CO2 Emissions (non_biogenic)`  )
+#test_data_21 <- test_data_21 |> mutate( "avg_FrmJbC2" = abs(avg_FrmJbC))
+test_data_21 <- test_data_21 |> mutate("ln Total CO2 Emissions test" = log(`Total CO2 Emissions (non_biogenic) test`), "ln emp" = log(avg_Emp), "ln_earn" = log(avg_EarnS), "ln_job_change" = log(avg_FrmJbC2))
+
+ols_model <- lm(`ln Total CO2 Emissions test` ~  ln_earn + `ln emp`, data = test_data_21)
+
+# View the summary of the model
+summary(ols_model)
+
+# Plot residuals to check model assumptions (optional)
+par(mfrow = c(2, 2))
+plot(ols_model)
+
+```
+```{r}
+# Install the lfe package if not already installed
+install.packages("lfe")
+install.packages("modelsummary")
+install.packages("broom")
+
+# Load the lfe package
+library(lfe)
+library(modelsummary)
+library(broom)
+library(kableExtra)
+
+```
+
+
+```{r}
+# Run a fixed-effects regression
+model <- felm(`ln Total CO2 Emissions test` ~  ln_earn + `ln emp` | year + State, data = test_data_21)
+
+# View the summary of the model
+summary(model)
+
+```
+
+```{r}
+# Cluster by state
+test_data_21 <- test_data_21 |> 
+  mutate(state_dummy = if_else(State == "TX", 1, 0))
+model_fe <- felm(`ln Total CO2 Emissions test` ~  ln_earn + `ln emp` + state_dummy | year , data = test_data_21)
+                        #cmethod = "reghdfe", 
+                       #cluster = "State")
+summary(model_fe)
+
+test_data_all_sector <- joined_dataset |> 
+  mutate("NAICS" = substr(industry, 1, 2 ), .keep = "all")|>
+  rename ( `Total CO2 Emissions (non_biogenic) test` =  `Total CO2 Emissions (non_biogenic)`  ) |>
+  mutate(state_dummy = if_else(State == "TX", 1, 0))
+
+#test_data_all_sector <- test_data_all_sector |> mutate("ln Total CO2 Emissions test" = log(`Total CO2 Emissions (non_biogenic) test`), "ln emp" = log(avg_Emp), "ln_earn" = log(avg_EarnS))
+
+test_data_all_sector <- test_data_all_sector |> 
+  mutate(
+    `ln Total CO2 Emissions test` = log(`Total CO2 Emissions (non_biogenic) test` + 1), 
+    `ln emp` = log(avg_Emp + 1), 
+    `ln_earn` = log(avg_EarnS + 1)
+  )
+
+
+model_fe <- felm(`ln Total CO2 Emissions test` ~ ln_earn + `ln emp` + state_dummy | year + industry, 
+                 cmethod = "reghdfe", 
+                 cluster = "industry",
+                 data = test_data_all_sector)
+
+summary(model_fe)
+
+# Extract residuals and fitted values from the fixed effects model
+residuals_fe <- residuals(model_fe)
+fitted_values_fe <- fitted(model_fe)
+
+# Set up a 2x2 plot layout
+par(mfrow=c(2,2))
+
+# Plot 1: Residuals vs Fitted
+plot(fitted_values_fe, residuals_fe, main="Residuals vs Fitted",
+     xlab="Fitted Values", ylab="Residuals")
+abline(h = 0, col = "red")
+
+# Plot 2: Normal Q-Q plot
+qqnorm(residuals_fe, main="Normal Q-Q")
+qqline(residuals_fe, col = "red")
+
+# Plot 3: Scale-Location (Spread-Location)
+sqrt_residuals <- sqrt(abs(residuals_fe))
+plot(fitted_values_fe, sqrt_residuals, main="Scale-Location",
+     xlab="Fitted Values", ylab="Sqrt(|Residuals|)")
+abline(h = 0, col = "red")
+
+# Plot 4: Residuals vs Leverage (Cook's Distance)
+cooks_distance <- cooks.distance(model_fe)
+plot(fitted_values_fe, cooks_distance, main="Residuals vs Leverage",
+     xlab="Fitted Values", ylab="Cook's Distance")
+abline(h = 4 / length(cooks_distance), col = "red")
+
+
+
+```
+
+
+```{r}
+# Compute R-squared and adjusted R-squared
+r_squared <- summary(model_clustered)$r.squared
+adj_r_squared <- summary(model_clustered)$adj.r.squared
+
+# Number of observations
+n_obs <- nobs(model_clustered)
+
+# F-statistic (if needed)
+f_stat <- summary(model_clustered)$fstat
+
+
+
+# Add statistics as rows
+custom_stats <- data.frame(
+  term = c("Number of Observations", "R-squared", "Adjusted R-squared", "F-statistic"),
+  estimate = c(n_obs, round(r_squared, 3), round(adj_r_squared, 3), round(f_stat, 3))
+)
+
+# Generate the table with custom statistics
+modelsummary(
+  model_clustered,
+  statistic = "({std.error})",
+  title = "Regression Results with Fixed Effects",
+  stars = TRUE,
+  add_rows = custom_stats,
+  output = "kableExtra"
+)
+
+# Append a note
+cat("\nNote: Fixed Effects include Year and State variables. Standard errors are clustered by State.\n")
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+joined_dataset2 <- joined_dataset
+#joined_dataset2 <- joined_dataset2 |> filter(startsWith(industry, "92") )
+# Step 2: Calculate the growth rates of the factors (wage, employment) and emissions
+joined_dataset2 <- joined_dataset2 |>
+  mutate(
+    `NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all")
+joined_dataset2 <-joined_dataset2 |> filter(`NAICS2  (sectors)` != 33 & `NAICS2  (sectors)` != 32)
+
+joined_dataset2$wg <-c(NA, diff(log(joined_dataset2$avg_EarnS)))
+joined_dataset2$eg <-  c(NA, diff(log(joined_dataset2$avg_Emp)))
+joined_dataset2$co2g <- c(NA, diff(log(joined_dataset2$`Total CO2 Emissions (non_biogenic)`)))
+# Step 3: Calculate the LMDI decomposition
+# For simplicity, we can use the formula as a contribution from wage and employment
+joined_dataset2$w_effect = joined_dataset2$wg * (joined_dataset2$eg / lag(joined_dataset2$eg))
+joined_dataset2$e_effect = joined_dataset2$eg * (joined_dataset2$wg / lag(joined_dataset2$wg))
+
+# Calculate the total emission change (change in carbon emissions)
+joined_dataset2$co2_t =  joined_dataset2$w_effect + joined_dataset2$e_effect
+
+# Step 4: View the results
+#print(co2_t)
+
+# Step 5: Plot the effects of wage and employment on emissions
+ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
+  geom_col(aes(y = joined_dataset2$co2_t, color = "Total Effect")) +
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "naics 2", y = "Effect on Carbon Emissions") +
+
+  theme_minimal()
+
+ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
+  geom_col(aes(y = joined_dataset2$w_effect, color = "Wage Effect")) +
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "naics 2", y = "Effect on Carbon Emissions") +
+  theme_minimal()
+ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
+  geom_col(aes(y = joined_dataset2$e_effect, color = "Employment Effect")) +
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "naics 2", y = "Effect on Carbon Emissions") +
+  theme_minimal()
+```
+
+
+```{r}
+
+
+ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
+  geom_col(aes(y = w_effect, color = "Wage Effect"), size = 1.2) +
+
+  geom_col(aes(y = e_effect, color = "Employment Effect"), size = 1.2) +
+
+  geom_col(aes(y = co2_t, color = "Total Effect"), size = 1.2) +
+  #geom_point(aes(y = co2_t, color = "Total Effect"), size = 2) +
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "Year", y = "Effect on Carbon Emissions",
+       color = "Effects") +
+  scale_color_manual(values = c("Wage Effect" = "blue", "Employment Effect" = "green", "Total Effect" = "red")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+This code adds data points, improves the color scheme, and customizes the theme for better visual appeal. Give it a try and see how it looks! If you need further customization, feel free to ask.
+```{r}
+
+
+
+
+# Plot
+ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`, y = w_effect , fill = "w_effect")) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_bar(aes(y = e_effect, fill = "e_effect") ,stat = "identity", position = "stack")
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "naics", y = "Effect on Carbon Emissions",
+       fill = "Factors") +
+  scale_fill_manual(values = c("Wage Effect" = "blue", "Employment Effect" = "green", "Total Effect" = "red")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`, y = w_effect , fill = "w_effect")) +
+  geom_bar(stat = "identity", position = "stack") +
+  #geom_bar(aes(y = e_effect, fill = "e_effect") ,stat = "identity", position = "stack")
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "naics", y = "Effect on Carbon Emissions",
+       fill = "Factors") +
+  scale_fill_manual(values = c("Wage Effect" = "blue", "Employment Effect" = "green", "Total Effect" = "red")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+This code will create a stacked bar plot where each bar represents a year, and the different colors within each bar represent the contributions of the different factors. Adjust the `joined_dataset2` data frame to match your actual data.
+
+Give this a try and let me know if you need any further adjustments!
+
+```{r}
+long_data <- joined_dataset2 %>%
+  pivot_longer(cols = c(w_effect, e_effect, co2_t),
+               names_to = "factor",
+               values_to = "value") %>%
+  mutate(factor = recode(factor,
+                         w_effect = "Wage Effect",
+                         e_effect = "Employment Effect"))
+
+# Plot
+ggplot(long_data, aes(x = `NAICS2  (sectors)`, y = value, fill = factor)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "NAICS Sectors", y = "Effect on Carbon Emissions",
+       fill = "Factors") +
+  scale_fill_manual(values = c("Wage Effect" = "blue", "Employment Effect" = "green", "Total Effect" = "red")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+```{r}
+# Pivot the data for plotting
+long_data <- joined_dataset2 %>%
+  pivot_longer(cols = c(w_effect, e_effect, co2_t),
+               names_to = "factor",
+               values_to = "value") %>%
+  mutate(fac = recode(factor,
+                         w_effect = "Wage Effect",
+                         e_effect = "Employment Effect",
+                         co2_t = "Total Effect"))
+#mutate(factor = recode(factor,
+                         #w_effect = "Wage Effect",
+                         #e_effect = "Employment Effect",
+                         #co2_t = "Total Effect"))
+
+# Separate total effect for red dots
+total_effect <- long_data %>%
+  filter(fac == "Total Effect") %>%
+  select(`NAICS2  (sectors)`, value, fac)
+
+long_data <- long_data %>% filter(fac != "Total Effect")
+
+# Plot
+ggplot(long_data, aes(x = `NAICS2  (sectors)`, y = value, fill = fac)) +
+  geom_bar(stat = "identity", position = "stack") +  # Stacked bars
+  geom_point(data = total_effect, aes(x = `NAICS2  (sectors)`, y = value), 
+             color = "red", size = 3) +  # Red dots for total effect
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "NAICS Sectors", y = "Effect on Carbon Emissions",
+       fill = "Factors") +
+  scale_fill_manual(values = c("Wage Effect" = "blue", "Employment Effect" = "green", "Total Effect" = "red")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+
+```
+```{r}
+# Step 1: Aggregate the data by industry
+aggregated_data <- joined_dataset2 %>%
+  group_by(`NAICS2  (sectors)`) %>%
+  summarise(
+    w_effect = sum(w_effect, na.rm = TRUE),
+    e_effect = sum(e_effect, na.rm = TRUE),
+    co2_t = sum(co2_t, na.rm = TRUE)  # Total effect
+  ) %>%
+  pivot_longer(cols = c(w_effect, e_effect, co2_t),
+               names_to = "factor",
+               values_to = "value") %>%
+  mutate(fac = recode(factor,
+                      w_effect = "Wage Effect",
+                      e_effect = "Employment Effect",
+                      co2_t = "Total Effect"))
+
+# Step 2: Separate total effect for red dots
+total_effect <- aggregated_data %>%
+  filter(factor == "co2_t") %>%
+  select(`NAICS2  (sectors)`, value, fac)
+
+aggregated_data <- aggregated_data  %>% filter(fac != "Total Effect")
+
+# Step 3: Plot
+ggplot(aggregated_data, aes(x = `NAICS2  (sectors)`, y = value, fill = fac)) +
+  geom_bar(stat = "identity", position = "stack") +  # Single stacked bar per industry
+  geom_point(data = total_effect, aes(x = `NAICS2  (sectors)`, y = value), 
+             color = "red", size = 3) +  # Single red dot for total effect
+  labs(title = "LMDI Decomposition of Carbon Emissions Change",
+       x = "NAICS Sectors", y = "Effect on Carbon Emissions",
+       fill = "Factors") +
+  scale_fill_manual(values = c("Wage Effect" = "blue", "Employment Effect" = "green")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+
+```
+

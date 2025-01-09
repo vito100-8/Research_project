@@ -202,31 +202,6 @@ ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
 ```{r}
 
 
-ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
-  geom_col(aes(y = w_effect, color = "Wage Effect"), size = 1.2) +
-
-  geom_col(aes(y = e_effect, color = "Employment Effect"), size = 1.2) +
-
-  geom_col(aes(y = co2_t, color = "Total Effect"), size = 1.2) +
-  #geom_point(aes(y = co2_t, color = "Total Effect"), size = 2) +
-  labs(title = "LMDI Decomposition of Carbon Emissions Change",
-       x = "Year", y = "Effect on Carbon Emissions",
-       color = "Effects") +
-  scale_color_manual(values = c("Wage Effect" = "blue", "Employment Effect" = "green", "Total Effect" = "red")) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12)
-  )
-```
-
-This code adds data points, improves the color scheme, and customizes the theme for better visual appeal. Give it a try and see how it looks! If you need further customization, feel free to ask.
-```{r}
-
-
 
 
 # Plot
@@ -377,5 +352,150 @@ ggplot(aggregated_data, aes(x = `NAICS2  (sectors)`, y = value, fill = fac)) +
   )
 
 
+```
+# PCA Analysis to Understand the Contribution of avg_Emp and avg_Earnings to Total CO2 Emissions
+
+```{r}
+
+# Step 1: Standardize the Variables
+data_standardized <- joined_dataset |> 
+  ungroup() |>
+  dplyr::select(`Total CO2 Emissions (non_biogenic)` , avg_Emp , avg_EarnS) |>
+  mutate(across(everything(), scale))
+
+data_standardized$`Total CO2 Emissions (non_biogenic)`[is.infinite(data_standardized$`Total CO2 Emissions (non_biogenic)`)] <- NA
+data_standardized$avg_EarnS[is.infinite(data_standardized$avg_EarnS)] <- NA
+data_standardized$avg_Emp[is.infinite(data_standardized$avg_Emp)] <- NA
+data_standardized <- na.omit(data_standardized)
+
+pca_result <- prcomp(data_standardized, scale. = FALSE, center = FALSE)
+
+# Step 3: Analyze PCA Results
+# Summary of PCA
+summary_pca <- summary(pca_result)
+print(summary_pca)
+
+# Loadings (Contributions of Factors)
+loadings <- pca_result$rotation
+print("Loadings:")
+print(loadings)
+
+# Step 4: Visualize the PCA
+# Biplot to visualize the relationship between variables and principal components
+biplot(pca_result, scale = 0)
+
+# Step 5: Compute the Proportion of Variance Explained (PVE)
+pve <- pca_result$sdev^2 / sum(pca_result$sdev^2)
+print("Proportion of Variance Explained:")
+print(pve)
+
+# Step 6: Report Findings
+cat("\n--- PCA Results Summary ---\n")
+cat("Proportion of Variance Explained (PVE):\n")
+print(pve)
+cat("\nLoadings (Variable Contributions to Components):\n")
+print(loadings)
+```
+
+
+```{r}
+test_wf_data <- join_wf_data |>
+  group_by(industry, year) %>%
+  summarize(
+    avg_earnings = mean(avg_EarnS, na.rm = TRUE),
+    total_employment = sum(avg_Emp, na.rm = TRUE),
+    avg_FrmJbC = mean(avg_FrmJbC, na.rm = TRUE),
+    .groups = "drop"
+  )
+test_join <- test_wf_data |> inner_join(clean_em_data)
+```
+
+```{r}
+test_join <- test_join |>
+  mutate(`NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all") 
+  
+test_join |>
+  ggplot(aes(x = year, y = `Total CO2 Emissions (non_biogenic)`, fill = `NAICS2  (sectors)`)) +
+  geom_col() +
+  ## We let the two subcharts have different scales 
+  facet_wrap(vars(State), scales = "free_y") + 
+  labs(title = "Total CO2 Emissions of energy producers by State")
+
+# Table to analyse the drivers of sudden C02 emissions hike in Texas between 2017 and 2018
+driver_emissions_hike <- test_join |> 
+  filter(State == "TX" & year > 2016 & year < 2019) |>
+  group_by(year, `NAICS2  (sectors)`) |> 
+  summarize("Number of firms" = n(),
+            "Total sector emissions" = sum(`Total CO2 Emissions (non_biogenic)`))
+
+driver_emissions_hike |>
+  kable("html", caption = "What cause a massive increase in Texas emissions between 2017 and 2018 ?") |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover", "condensed"))
+
+test_join |>
+  ggplot(aes(x = year, y = `Total CO2 Emissions (non_biogenic)`, fill = State)) +
+  geom_col(position = "fill") +
+  labs(title = "Texas vs California particpation in total C02 emissions")
+```
+
+```{r}
+dataset_summary_test <- test_join |>
+  ungroup() |>
+  summarise(
+    "Number of rows" = nrow(test_join),
+    "Number of columns" = ncol(test_join),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Annual",
+    "Extremum levels of CO2 emissions " = paste(range(`Total CO2 Emissions (non_biogenic)`), collapse = " - "),
+    # separate the rows that have a "," to not double count firms in several subsectors as distinct values
+    "Number of industry" = length(unique(industry)),
+    "Number of sectors" = length(unique(`NAICS2  (sectors)`)),
+    "Total number of missing values across the sheet" = sum(sapply(test_join, function(x) sum(is.na(x)))),
+    "Missing values in one our key variables" = sum(
+      #summing every missing values of each key variables and then summing them with each others to obtain the          total
+      sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
+      sum(is.na(total_employment)),
+      sum(is.na(avg_earnings)),
+      sum(is.na(avg_FrmJbC)))
+  )
+
+
+  
+NAICS2_test_level_summary <- test_join |>
+  group_by(`NAICS2  (sectors)`) |>
+  summarise(
+    "Number of rows" = n(),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Annual",
+    "Extremum levels of CO2 emissions " = paste(range(`Total CO2 Emissions (non_biogenic)`), collapse = " - "),
+    # separate the rows that have a "," to not double count firms in several subsectors as distinct values
+   "Contribution (%) of the sector in the total CO2 emissions" = 
+      100 * sum(`Total CO2 Emissions (non_biogenic)`) / sum(test_join$`Total CO2 Emissions (non_biogenic)`),
+   #Contribution of one sector in total emissions divided by the emissions of all sectors 
+    "Contribution (%) of California to the total CO2 emissions of the sector" = 
+      100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE) / 
+      sum(if_else(State %in% c("CA", "TX"), `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE),
+   #Contribution of California to total emissions of the sector, Texas' one is thus obtain by  TX = 100 - CA
+   "Sector Contribution (%) of California's total CO2 emissions" = 
+      100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE) / 
+      sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE),
+    "Number of industry" = length(unique(industry)),
+    "Missing values in one our key variables" = sum(
+      sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
+      sum(is.na(total_employment)),
+      sum(is.na(avg_earnings)),
+      sum(is.na(avg_FrmJbC)))
+  )
+
+## Tables for each summary
+
+dataset_summary_test |>
+  kable("html", caption = "Global database information") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+
+
+NAICS2_test_level_summary |>
+  kable("html", caption = "Per NAICS 2 database information") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
 ```
 

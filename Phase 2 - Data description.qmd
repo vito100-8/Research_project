@@ -333,11 +333,11 @@ clean_em_data <- clean_em_data |>
 
 ### Merging datasets
 
-After we cleaned up the datasets, we first merged the `clean_wf_tx_data` and the `clean_wf_ca_data` datasets together to be stacked one under the other. This way, the observations from the two datasets can only be differenciated by the `geography column`, which contains the geopgraphy code corresponding to the two chosen States.
+After we cleaned up the datasets, we first merged the `clean_wf_tx_data` and the `clean_wf_ca_data` datasets together to be stacked one under the other. This way, the observations from the two datasets can only be differenciated by the `geography column`, which contains the geography code corresponding to the two chosen States.
 
 To be able to execute the second merge with the `clean_em_data` dataset, we also renamed `geography` to `State` and changed the observations, which were geography codes, to the abbreviation of the state name, as it figures in the `clean_em_data` dataset.
 
-Finally, we did a `left_join()` merge of the two final datasets. As the workforce datasets contained observations for all industry sectors, while the `emissions_data` dataset only contained observations for energy producing sectors, we did a final filtering to drop the missing values corresponding to non-energy producing sectors. 
+Finally, we did a `inner_join()` merge of the two final datasets. As the workforce datasets contained observations for all industry sectors, while the `emissions_data` dataset only contained observations for energy producing sectors, we did a final filtering to drop the missing values corresponding to non-energy producing sectors (according to the definition in the Research Question part). 
 
 ```{r}
 # Combining the two workforces datasets
@@ -353,11 +353,25 @@ join_wf_data <- join_wf_data |>
 
 ```{r}
 #| message: false
-# Merging emissions and workforce datasets using workforce data as master, so we can keep all observations from the latter dataset
-joined_dataset <- left_join( join_wf_data, clean_em_data)
+# Merging emissions and workforce datasets using workforce data as master
 
 # Cleaning for the missing values of emissions
 joined_dataset <- joined_dataset |> filter(!is.na(`Total CO2 Emissions (non_biogenic)`))
+
+#Preparing the merge by agregating the workforce dataset : we want to have a single value of our key variables to be linked to variables in the emission dataset
+#To do that, we take the mean of our variables (except for employment where the quantity aspect need to be summed) and agregate them at all education and sex levels. 
+#Thus we group by industry and year (the level of detail wanted for our later join)
+
+join_wf_data <- join_wf_data |>
+  group_by(industry, year) %>%
+  summarize(
+    avg_EarnS = mean(avg_EarnS, na.rm = TRUE),
+    total_Emp = sum(avg_Emp, na.rm = TRUE),
+    avg_FrmJbC = mean(avg_FrmJbC, na.rm = TRUE),
+    .groups = "drop"
+  )
+#inner join with id variables detected being industry and year
+joined_dataset <- join_wf_data |> inner_join(clean_em_data)
 ```
 
 We now have our joined database combined of the previous `emissions_data`, `workforce_ca_data` and `workforce_tx_data` datasets.
@@ -393,7 +407,6 @@ joined_dataset |>
 
 # Table to analyse the drivers of sudden C02 emissions hike in Texas between 2017 and 2018
 driver_emissions_hike <- joined_dataset |> 
-  mutate(`NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all") |>
   filter(State == "TX" & year > 2016 & year < 2019) |>
   group_by(year, `NAICS2  (sectors)`) |> 
   summarize("Number of firms" = n(),

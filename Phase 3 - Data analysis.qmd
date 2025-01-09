@@ -110,6 +110,40 @@ Additionnally, we create dummies to separate our analysis in groups :
 
 ## Data Description
 
+About the dataset 
+
+The dataset we will be using for our analysis corresponds to a merge of two datasets : one from the US Census Bureau which provides data on Quarterly workforce characteristics of workers in California and Texas, and another from the US Environmental Protection Agency which provides data on energy-producing facilities in the US. 
+
+After merging and cleaning, we ended up with a dataset of 18270 observations from the two States of interest, California and Texas, covering yearly the period 2013 to 2023. We chose this time period because our emissions dataset covers years from 2010 to 2023 but the first years had sparse data. Thus we decided to delete those years for clarity's sake, which should not induce any major changes in further analyses.
+
+- rajouter tableaux des du dataset
+
+```{r}
+#| echo: false
+# Summary table for our joined dataset
+dataset_summary <- joined_dataset |>
+  summarise(
+    "Number of rows" = nrow(joined_dataset),
+    "Number of columns" = ncol(joined_dataset),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Annual",
+    "Extremum levels of CO2 emissions " = paste(range(`Unit CO2 emissions (non-biogenic)`), collapse = " - "),
+    ### separate the rows that have a "," to not double count firms in several subsectors as distinct values
+    "Number of industry" = length(unique(industry)),
+    "Number of sectors" = length(unique(`NAICS2  (sectors)`)),
+    "Total number of missing values across the sheet" = sum(sapply(joined_dataset, function(x) sum(is.na(x)))),
+    "Missing values in one our key variables" = sum(
+      sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
+      sum(is.na(avg_Emp)),
+      sum(is.na(avg_EarnS)),
+      sum(is.na(avg_FrmJbC))
+  )
+
+joined_dataset_summary |>
+  kable("html", caption = "Final database information") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
 
 
 ## Graphical Analysis

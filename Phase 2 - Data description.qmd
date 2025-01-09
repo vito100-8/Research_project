@@ -379,10 +379,12 @@ The table between the two charts focuses on the sudden hike of CO2 emission in T
 #| echo: false
 #| message: false
 # Evolution of Total CO2 Emissions of energy producers by State
-joined_dataset |>
+joined_dataset <- joined_dataset |>
   mutate(
     `NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all") |>
-  filter(year > 2012) |>
+  filter(year > 2012) 
+
+joined_dataset |>
   ggplot(aes(x = year, y = `Total CO2 Emissions (non_biogenic)`, fill = `NAICS2  (sectors)`)) +
   geom_col() +
   ## We let the two subcharts have different scales 

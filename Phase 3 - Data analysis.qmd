@@ -110,9 +110,79 @@ Additionnally, we create dummies to separate our analysis in groups :
 
 ## Data Description
 
+The dataset we will be using for our analysis corresponds to a merge of two datasets : one from the US Census Bureau which provides data on Quarterly workforce characteristics of workers in California and Texas, and another from the US Environmental Protection Agency which provides data on energy-producing facilities in the US. 
+ 
+After merging and cleaning, we ended up with a dataset of 18270 observations from the two States of interest, California and Texas, covering yearly the period 2013 to 2023. We chose this time period because our emissions dataset covers years from 2010 to 2023 but the first years had sparse data. Thus we decided to delete those years for clarity's sake, which should not induce any major changes in further analyses.
+
+The following tables provide an overview of the final joined dataset (Table 1) and a analysis sector by sector of extremum levels and contributions (Table 2).
+
+
+```{r}
+#| echo: false
+#| message: false
+
+# Summary table for our joined dataset
+dataset_summary <- joined_dataset |>
+  ungroup() |>
+  summarise(
+    "Number of rows" = nrow(joined_dataset),
+    "Number of columns" = ncol(joined_dataset),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Annual",
+    "Extremum levels of CO2 emissions " = paste(range(`Total CO2 Emissions (non_biogenic)`), collapse = " - "),
+    # separate the rows that have a "," to not double count firms in several subsectors as distinct values
+    "Number of industry" = length(unique(industry)),
+    "Number of sectors" = length(unique(`NAICS2  (sectors)`)),
+    "Total number of missing values across the sheet" = sum(sapply(joined_dataset, function(x) sum(is.na(x)))),
+    "Missing values in one our key variables" = sum(
+      #summing every missing values of each key variables and then summing them with each others to obtain the          total
+      sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
+      sum(is.na(avg_Emp)),
+      sum(is.na(avg_EarnS)),
+      sum(is.na(avg_FrmJbC)))
+  )
+
+NAICS2_level_summary <- joined_dataset |>
+  group_by(`NAICS2  (sectors)`) |>
+  summarise(
+    "Number of rows" = n(),
+    "Period" = paste(range(year), collapse= " - "),
+    "Periodicity" = "Annual",
+    "Extremum levels of CO2 emissions " = paste(range(`Total CO2 Emissions (non_biogenic)`), collapse = " - "),
+    # separate the rows that have a "," to not double count firms in several subsectors as distinct values
+   "Contribution (%) of the sector in the total CO2 emissions" = 
+      100 * sum(`Total CO2 Emissions (non_biogenic)`) / sum(joined_dataset$`Total CO2 Emissions (non_biogenic)`),
+   #Contribution of one sector in total emissions divided by the emissions of all sectors 
+    "Contribution (%) of California to the total CO2 emissions of the sector" = 
+      100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0)) / 
+      sum(if_else(State %in% c("CA", "TX"), `Total CO2 Emissions (non_biogenic)`, 0, missing = 0)),
+   #Contribution of California to total emissions of the sector, Texas' one is thus obtain by  TX = 100 - CA
+    "Number of industry" = length(unique(industry)),
+    "Missing values in one our key variables" = sum(
+      sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
+      sum(is.na(avg_Emp)),
+      sum(is.na(avg_EarnS)),
+      sum(is.na(avg_FrmJbC)))
+  )
+
+## Tables for each summary
+
+dataset_summary |>
+  kable("html", caption = "Global database information") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+
+
+NAICS2_level_summary |>
+  kable("html", caption = "Per NAICS 2 database information") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To ameliorate the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. 
+The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019))  but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
 
 
 ## Part 1 : Non-causal analysis
+
 
 ### Graphical analysis
 
@@ -143,9 +213,6 @@ joined_dataset |>
 ```
 
 ```{r}
-#| echo: false
-#| message: false
-
 # Evolution of Net Employment Change in NAICS2 sectors
 joined_dataset |>
   group_by(`NAICS2  (sectors)`, year, State) |>

@@ -110,11 +110,8 @@ Additionnally, we create dummies to separate our analysis in groups :
 
 ## Data Description
 
-About the dataset 
 
-The dataset we will be using for our analysis corresponds to a merge of two datasets : one from the US Census Bureau which provides data on Quarterly workforce characteristics of workers in California and Texas, and another from the US Environmental Protection Agency which provides data on energy-producing facilities in the US. 
 
-After merging and cleaning, we ended up with a dataset of 18270 observations from the two States of interest, California and Texas, covering yearly the period 2013 to 2023. We chose this time period because our emissions dataset covers years from 2010 to 2023 but the first years had sparse data. Thus we decided to delete those years for clarity's sake, which should not induce any major changes in further analyses.
 ## Part 1 : Non-causal analysis
 
 ### Graphical analysis

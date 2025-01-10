@@ -4,47 +4,51 @@ format: html
 editor: visual
 ---
 
-
 ```{r}
 
-# Fit an OLS model
-test_data_21 <- joined_dataset |> 
-  mutate(`NAICS2  (sectors)` = substr(industry, 1, 2 ), .keep = "all")|>
-  filter(`NAICS2  (sectors)` == 21) |> rename ( `Total CO2 Emissions (non_biogenic) test` =  `Total CO2 Emissions (non_biogenic)`  )
-#test_data_21 <- test_data_21 |> mutate( "avg_FrmJbC2" = abs(avg_FrmJbC))
-test_data_21 <- test_data_21 |> mutate("ln Total CO2 Emissions test" = log(`Total CO2 Emissions (non_biogenic) test`), "ln emp" = log(avg_Emp), "ln_earn" = log(avg_EarnS), "ln_job_change" = log(avg_FrmJbC2))
+## Defining logarithmic variables to rationalize outliers/zero values etc. 
+dataset_for_ols <- joined_dataset |> 
+  filter(`NAICS2  (sectors)` == 21) |> 
+  rename ( `Total CO2 Emissions (non_biogenic) test` =  `Total CO2 Emissions (non_biogenic)`) |>
+  mutate(`ln Total CO2 Emissions test` = log(`Total CO2 Emissions (non_biogenic) test`), `ln emp` = log(avg_Emp), `ln earn` = log(avg_EarnS))
 
-ols_model <- lm(`ln Total CO2 Emissions test` ~  ln_earn + `ln emp`, data = test_data_21)
+## Running the base regression
+ols_model <- lm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
 
-# View the summary of the model
+## Summary of the OLS results
 summary(ols_model)
 
-# Plot residuals to check model assumptions (optional)
-par(mfrow = c(2, 2))
+## Plot residuals
+par(mfrow = c(2, 2)) ### setting up layout
 plot(ols_model)
 
+
+
+#test_data_21 <- test_data_21 |> mutate( "avg_FrmJbC2" = abs(avg_FrmJbC))
+#test_data_21 <- test_data_21 |> mutate("ln Total CO2 Emissions test" = log(`Total CO2 Emissions (non_biogenic) test`), "ln emp" = log(avg_Emp), "ln_earn" = log(avg_EarnS), "ln_job_change" = log(avg_FrmJbC2))
+
 ```
+
 ```{r}
-# Install the lfe package if not already installed
+# Installing the lfe package
 install.packages("lfe")
 install.packages("modelsummary")
 install.packages("broom")
 
-# Load the lfe package
+# Loading the lfe package
 library(lfe)
 library(modelsummary)
 library(broom)
 library(kableExtra)
-
 ```
-
 
 ```{r}
 # Run a fixed-effects regression
-model <- felm(`ln Total CO2 Emissions test` ~  ln_earn + `ln emp` | year + State, data = test_data_21)
+fe_ols_model <- felm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp` | year, data = dataset_for_ols)
 
 # View the summary of the model
-summary(model)
+summary(fe_ols_model)
+
 
 ```
 
@@ -111,7 +115,6 @@ abline(h = 4 / length(cooks_distance), col = "red")
 
 ```
 
-
 ```{r}
 # Compute R-squared and adjusted R-squared
 r_squared <- summary(model_clustered)$r.squared
@@ -146,13 +149,6 @@ cat("\nNote: Fixed Effects include Year and State variables. Standard errors are
 
 
 ```
-
-
-
-
-
-
-
 
 ```{r}
 
@@ -198,7 +194,6 @@ ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
   theme_minimal()
 ```
 
-
 ```{r}
 
 
@@ -224,6 +219,7 @@ ggplot(joined_dataset2, aes(x = `NAICS2  (sectors)`)) +
 ```
 
 This code adds data points, improves the color scheme, and customizes the theme for better visual appeal. Give it a try and see how it looks! If you need further customization, feel free to ask.
+
 ```{r}
 
 
@@ -334,6 +330,7 @@ ggplot(long_data, aes(x = `NAICS2  (sectors)`, y = value, fill = fac)) +
 
 
 ```
+
 ```{r}
 # Step 1: Aggregate the data by industry
 aggregated_data <- joined_dataset2 %>%
@@ -378,4 +375,3 @@ ggplot(aggregated_data, aes(x = `NAICS2  (sectors)`, y = value, fill = fac)) +
 
 
 ```
-

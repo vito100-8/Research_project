@@ -160,15 +160,21 @@ dataset_summary <- joined_dataset |>
     # separate the rows that have a "," to not double count firms in several subsectors as distinct values
     "Number of industry" = length(unique(industry)),
     "Number of sectors" = length(unique(`NAICS2  (sectors)`)),
+    #Let's implement a missing values count to be sure we correctly treated them
     "Total number of missing values across the sheet" = sum(sapply(joined_dataset, function(x) sum(is.na(x)))),
     "Missing values in one our key variables" = sum(
       #summing every missing values of each key variables and then summing them with each others to obtain the          total
       sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
       sum(is.na(avg_Emp)),
+      sum(is.na(total_Emp)),
       sum(is.na(avg_EarnS)),
       sum(is.na(avg_FrmJbC)))
   )
 
+Total_C02_emission_CA <- joined_dataset |>
+  group_by(`NAICS2  (sectors)`) |>
+  summarize(total_CO2_CA = if_else(State == "CA",`Total CO2 Emissions (non_biogenic)`, 0, missing = 0))
+  
 NAICS2_level_summary <- joined_dataset |>
   group_by(`NAICS2  (sectors)`) |>
   summarise(
@@ -183,7 +189,16 @@ NAICS2_level_summary <- joined_dataset |>
     "Contribution (%) of California to the total CO2 emissions of the sector" = 
       100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0)) / 
       sum(if_else(State %in% c("CA", "TX"), `Total CO2 Emissions (non_biogenic)`, 0, missing = 0)),
+      100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE) / 
+      sum(if_else(State %in% c("CA", "TX"), `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE),
    #Contribution of California to total emissions of the sector, Texas' one is thus obtain by  TX = 100 - CA
+   "Sector Contribution (%) of California's total CO2 emissions" = 
+    100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE) / 
+    sum(joined_dataset$`Total CO2 Emissions (non_biogenic)`[joined_dataset$State == "CA"], na.rm = TRUE),
+   #Same but for Texas
+   "Sector Contribution (%) of Texas' total CO2 emissions" = 
+    100 * sum(if_else(State == "TX", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE) / 
+    sum(joined_dataset$`Total CO2 Emissions (non_biogenic)`[joined_dataset$State == "TX"], na.rm = TRUE),
     "Number of industry" = length(unique(industry)),
     "Missing values in one our key variables" = sum(
       sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
@@ -207,6 +222,12 @@ NAICS2_level_summary |>
 We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To ameliorate the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. 
 The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019))  but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
 
+Another key observation is the sector Contribution of each State's total CO2 emissions. We notice that the contribution is highly uneven, with sector 21 and 22 accounting for more than 95% of total Texas' emissions while accounting only for around 65% in California. 
+
+
+-- faire un graphique
+
+The latter State has more sectors that  -- continuer l'analyse
 
 ## Part 1 : Non-causal analysis
 

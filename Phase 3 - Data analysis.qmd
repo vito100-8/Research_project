@@ -169,7 +169,7 @@ dataset_summary <- joined_dataset |>
       sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
       sum(is.na(total_Emp)),
       sum(is.na(avg_EarnS)),
-      sum(is.na(avg_FrmJbC)))
+      sum(is.na(total_FrmJbC)))
   )
 
 Total_C02_emission_CA <- joined_dataset |>
@@ -188,8 +188,6 @@ NAICS2_level_summary <- joined_dataset |>
       100 * sum(`Total CO2 Emissions (non_biogenic)`) / sum(joined_dataset$`Total CO2 Emissions (non_biogenic)`),
    #Contribution of one sector in total emissions divided by the emissions of all sectors 
     "Contribution (%) of California to the total CO2 emissions of the sector" = 
-      100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0)) / 
-      sum(if_else(State %in% c("CA", "TX"), `Total CO2 Emissions (non_biogenic)`, 0, missing = 0)),
       100 * sum(if_else(State == "CA", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE) / 
       sum(if_else(State %in% c("CA", "TX"), `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE),
    #Contribution of California to total emissions of the sector, Texas' one is thus obtain by  TX = 100 - CA
@@ -201,11 +199,6 @@ NAICS2_level_summary <- joined_dataset |>
     100 * sum(if_else(State == "TX", `Total CO2 Emissions (non_biogenic)`, 0, missing = 0), na.rm = TRUE) / 
     sum(joined_dataset$`Total CO2 Emissions (non_biogenic)`[joined_dataset$State == "TX"], na.rm = TRUE),
     "Number of industry" = length(unique(industry)),
-    "Missing values in one our key variables" = sum(
-      sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
-      sum(is.na(total_Emp)),
-      sum(is.na(avg_EarnS)),
-      sum(is.na(avg_FrmJbC)))
   )
 
 ## Tables for each summary
@@ -220,7 +213,7 @@ NAICS2_level_summary |>
   kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
 ```
 
-We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To ameliorate the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. 
+We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To enhance the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. 
 The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019))  but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
 
 Another key observation is the sector Contribution of each State's total CO2 emissions. We notice that the contribution is highly uneven, with sector 21 and 22 accounting for more than 95% of total Texas' emissions while accounting only for around 65% in California. 
@@ -418,6 +411,112 @@ plot_grid(
 ```
 
 ### LMDI decomposition
+
+
+
+```{r}
+
+
+# Filter data for the base year (2013)
+base_year <- 2013
+data_base <- joined_dataset  |> filter(year == base_year)
+
+# Calculate variations from 2013 to subsequent years
+lmdi_results <- joined_dataset |>
+  filter(year > base_year) |> # Only keep years after 2013
+  left_join(data_base, by = "NAICS2  (sectors)", suffix = c("", "_base")) |> # Join with base year
+  mutate(
+    
+    #Calculating the log mean used in the latter formulae (it is equal to x if x - y = 0)
+    log_mean = if_else(`Total CO2 Emissions (non_biogenic)` != `Total CO2 Emissions (non_biogenic)_base`, (`Total CO2 Emissions (non_biogenic)` - `Total CO2 Emissions (non_biogenic)_base`)/ (log(`Total CO2 Emissions (non_biogenic)` ) - log(`Total CO2 Emissions (non_biogenic)_base`)), `Total CO2 Emissions (non_biogenic)` ),
+        
+    # Calculate contributions using LMDI formulas
+    Delta_Emp = if_else(total_Emp > 1, log_mean * log(total_Emp / total_Emp_base), 0),
+    Delta_EarnS = log_mean * log(avg_EarnS / avg_EarnS_base),
+    # Calculate total variation in emissions equal to the sum of the two factors by model construction
+    Total_CO2_var = Delta_Emp + Delta_EarnS,
+
+  ) |>
+  group_by(`NAICS2  (sectors)`) |>
+  summarize(
+    Total_CO2_var = sum(Total_CO2_var, na.rm = TRUE),
+    Contribution_Q = sum(Delta_Emp, na.rm = TRUE),
+    Contribution_S = sum(Delta_EarnS, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Table to see results
+print(lmdi_results)
+
+```
+
+
+```{r}
+# Calculate Average Variations and Contributions by Sector
+average_summary_table <- lmdi_results |>
+  group_by(`NAICS2  (sectors)`) |>
+  summarize(
+    Avg_CO2_Variation = mean(Total_CO2_var, na.rm = TRUE),
+    Avg_Contribution_Emp = mean(Contribution_Q, na.rm = TRUE),
+    Avg_Contribution_EarnS = mean(Contribution_S, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Emp_Percentage = 100 * Avg_Contribution_Emp / Avg_CO2_Variation,
+    EarnS_Percentage = 100 * Avg_Contribution_EarnS / Avg_CO2_Variation
+  )
+
+# Displaying the synthetic table
+print(average_summary_table)
+
+```
+
+
+```{r}
+
+# First graph with percentage contribution
+plot_data <- average_summary_table |>
+  pivot_longer(cols = c(Emp_Percentage, EarnS_Percentage),
+               names_to = "Factor",
+               values_to = "Percentage_Contribution")
+
+
+ggplot(plot_data, aes(x = `NAICS2  (sectors)`, y = Percentage_Contribution, fill = Factor)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(
+    title = "Percentage Contributions of Employment (Q) and Earnings (S) Factors to CO2 Variations by Sector",
+    x = "Sector (NAICS 2)",
+    y = "Percentage Contribution to CO2 Variation",
+    fill = "Factor"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# Second graph with absolute values
+plot_data2 <- average_summary_table |>
+  pivot_longer(cols = c(Avg_Contribution_Emp, Avg_Contribution_EarnS),
+               names_to = "Factor",
+               values_to = "Average_abs_Contribution")
+
+
+ggplot(plot_data2, aes(x = `NAICS2  (sectors)`, y = Average_abs_Contribution, fill = Factor)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(
+    title = "Average absolute Contributions of Employment (Q) and Earnings (S) Factors to CO2 Variations by Sector",
+    x = "Sector (NAICS 2)",
+    y = "Average Contribution to CO2 Variation",
+    fill = "Factor"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+
+
 
 
 

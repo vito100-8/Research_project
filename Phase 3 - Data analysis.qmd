@@ -167,7 +167,7 @@ dataset_summary <- joined_dataset |>
       sum(is.na(`Total CO2 Emissions (non_biogenic)`)),
       sum(is.na(total_Emp)),
       sum(is.na(avg_EarnS)),
-      sum(is.na(avg_FrmJbC)))
+      sum(is.na(total_FrmJbC)))
   )
 
 Total_C02_emission_CA <- joined_dataset |>

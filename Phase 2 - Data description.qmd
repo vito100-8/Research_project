@@ -355,9 +355,6 @@ join_wf_data <- join_wf_data |>
 #| message: false
 # Merging emissions and workforce datasets using workforce data as master
 
-# Cleaning for the missing values of emissions
-joined_dataset <- joined_dataset |> filter(!is.na(`Total CO2 Emissions (non_biogenic)`))
-
 #Preparing the merge by agregating the workforce dataset : we want to have a single value of our key variables to be linked to variables in the emission dataset
 #To do that, we take the mean of our variables (except for employment where the quantity aspect need to be summed) and agregate them at all education and sex levels. 
 #Thus we group by industry and year (the level of detail wanted for our later join)
@@ -367,7 +364,7 @@ join_wf_data <- join_wf_data |>
   summarize(
     avg_EarnS = mean(avg_EarnS, na.rm = TRUE),
     total_Emp = sum(avg_Emp, na.rm = TRUE),
-    avg_FrmJbC = mean(avg_FrmJbC, na.rm = TRUE),
+    total_FrmJbC = sum(avg_FrmJbC, na.rm = TRUE),
     .groups = "drop"
   )
 #inner join with id variables detected being industry and year

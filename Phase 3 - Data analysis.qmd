@@ -5,6 +5,33 @@ format:
   pdf: default
 ---
 
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+#Libraries
+
+## Data 
+library(vroom)
+library(here)
+library(readr)
+library(httr2)
+
+## Treatment
+library(tidyr)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(broom)
+
+## Regression
+library(lfe)
+library(modelsummary)
+library(lmtest)
+```
+
 ## Methodology
 
 How do workforce characteristics, including wage levels, employment size, and net employment change, contribute to variations in CO2 emissions in energy-producing industries over time?
@@ -204,12 +231,33 @@ The latter State has more sectors that  -- continuer l'analyse
 #| message: false
 
 # Evolution of Average Monthly Wage, Average Employment and Total CO2 Emissions in selected NAICS2 sectors
+
 joined_dataset |>
-  filter(`NAICS2  (sectors)` == "21" | `NAICS2  (sectors)` == "22" | `NAICS2  (sectors)` == "32") |>
   group_by(`NAICS2  (sectors)`, year, State) |>
-  summarise(avg_wage_sector = mean(avg_EarnS, na.rm = TRUE), avg_emp_sector = mean(avg_Emp, na.rm = TRUE), .groups = "drop") |>
-  ggplot(aes(x = year, y = avg_wage_sector, fill = `NAICS2  (sectors)`)) +
-  geom_col()
+  summarise(
+    contrib_co2 = 100 * sum(`Total CO2 Emissions (non_biogenic)`) / sum(joined_dataset$`Total CO2 Emissions (non_biogenic)`),
+    avg_wage_sector = mean(avg_EarnS, na.rm = TRUE)) |>
+  filter(`NAICS2  (sectors)` == "22") |>
+  ggplot(aes(x = year)) + 
+  geom_col(aes(y = contrib_co2, fill = "Sector CO2 Contribution")) +
+  geom_point(aes(y = avg_wage_sector / 2100, color = "Average Monthly Wage")) +
+  scale_y_continuous(
+    name = "Contribution (%)",
+    limits = c(0, 5),
+    sec.axis = sec_axis(~ . * 2100, name = "Average Monthly Wage")) +
+  scale_color_manual(
+    values = c("Sector CO2 Contribution" = "red", "Average Monthly Wage" = "blue")) +
+  facet_wrap(vars(State)) +
+  labs(
+    title = "Sector Contribution to CO2 Emissions and Average Monthly Wage",
+    x = "Year"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top",
+    plot.title = element_text(hjust = 0.5)
+  )
+
 ```
 
 ```{r}
@@ -349,13 +397,7 @@ ggplot(plot_data2, aes(x = `NAICS2  (sectors)`, y = Average_abs_Contribution, fi
 ## Model Fitting
 
 
-
 ## Testing the model
-
-
-
-## Extension of the model
-
 
 
 ## Conclusion

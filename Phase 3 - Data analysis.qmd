@@ -28,7 +28,7 @@ library(ggplot2)
 library(broom)
 
 ## Regression
-library(lfe)
+library(fixest)
 library(modelsummary)
 library(lmtest)
 ```
@@ -523,7 +523,64 @@ ggplot(plot_data2, aes(x = `NAICS2  (sectors)`, y = Average_abs_Contribution, fi
 ## Model Fitting
 
 
-## Testing the model
+### Base Model 
+```{r}
+#| echo: false
+#| message: false
+
+## Defining logarithmic variables to rationalize outliers/zero values 
+dataset_for_ols <- joined_dataset |> 
+  filter(`NAICS2  (sectors)` == 21) |> 
+  rename ( `Total CO2 Emissions (non_biogenic) test` =  `Total CO2 Emissions (non_biogenic)`) |>
+  mutate(`ln Total CO2 Emissions test` = log(`Total CO2 Emissions (non_biogenic) test`), `ln emp` = log(total_Emp), `ln earn` = log(avg_EarnS))
+
+## Running the base regression
+base_ols_model <- lm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
+
+## Summary of the OLS results
+summary(base_ols_model)
+```
+### Extended model with dummy variable
+```{r}
+#| echo: false
+#| message: false
+
+## Defining a dummy variable for State, which takes the value 1 for Texas and 0 for California
+dataset_for_ols <-
+  dataset_for_ols |>
+  mutate(state_dummy = if_else(State == "TX", 1, 0))
+
+extend_ols_model <- lm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp` + state_dummy, data = dataset_for_ols)
+
+summary(extend_ols_model)
+
+par(mfrow = c(2, 2)) ### setting up layout
+plot(extend_ols_model)
+```
+
+## Model Extension and Fixed Effects
+
+### Testing the model
+```{r}
+
+# Testing model assumptions
+
+## Normality and linearity
+par(mfrow = c(2, 2)) ### setting up layout
+plot(extend_ols_model)
+
+## Homoscedasticity
+bptest(extend_ols_model)
+```
+
+### Introducing fixed effects
+```{r}
+## Introducing fixed effect year
+fe_ols_model <- feols(log(`Total CO2 Emissions (non_biogenic) test`) ~  `ln earn` + `ln emp` + state_dummy | year, data = dataset_for_ols)
+
+## Summary of fixed-effect model with robust standard errors
+summary(fe_ols_model, vcov = "hetero")
+```
 
 
 ## Conclusion

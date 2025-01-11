@@ -307,15 +307,17 @@ lmdi_results <- joined_dataset |>
     # Calculate contributions using LMDI formulas
     Delta_Emp = if_else(total_Emp > 1, log_mean * log(total_Emp / total_Emp_base), 0),
     Delta_EarnS = log_mean * log(avg_EarnS / avg_EarnS_base),
+    Delta_Jbc = if_else((total_FrmJbC > 1 & total_FrmJbC_base > 1 ), log_mean * log(total_FrmJbC / total_FrmJbC_base), 0),
     # Calculate total variation in emissions equal to the sum of the two factors by model construction
-    Total_CO2_var = Delta_Emp + Delta_EarnS,
+    Total_CO2_var = Delta_Emp + Delta_EarnS + Delta_Jbc,
 
   ) |>
   group_by(`NAICS2  (sectors)`) |>
   summarize(
     Total_CO2_var = sum(Total_CO2_var, na.rm = TRUE),
-    Contribution_Q = sum(Delta_Emp, na.rm = TRUE),
-    Contribution_S = sum(Delta_EarnS, na.rm = TRUE),
+    Contribution_Emp = sum(Delta_Emp, na.rm = TRUE),
+    Contribution_EarnS = sum(Delta_EarnS, na.rm = TRUE),
+    Contribution_Jbc = sum(Delta_Jbc, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -324,6 +326,58 @@ print(lmdi_results)
 
 ```
 
+```{r}
+# Filter data for the base year (2013) and the target year (2023)
+base_year <- 2013
+target_year <- 2023
+
+data_base <- joined_dataset |> filter(year == base_year)
+data_target <- joined_dataset |> filter(year == target_year)
+
+# Join base year and target year data
+lmdi_results <- data_target |>
+  filter(`NAICS2  (sectors)` != 42) |>
+  # We notice in the previous graphS that the sector 42 did not have all the data required, we thus cancel the sector from the analysis (less than 0.0003% of total emissions across States)
+  left_join(data_base, by = "NAICS2  (sectors)", suffix = c("", "_base")) |> # Join with base year
+  mutate(
+    # Calculating the log mean used in the LMDI formulas (it is equal to x if x - y = 0)
+    log_mean = if_else(
+      `Total CO2 Emissions (non_biogenic)` != `Total CO2 Emissions (non_biogenic)_base`,
+      (`Total CO2 Emissions (non_biogenic)` - `Total CO2 Emissions (non_biogenic)_base`) / 
+        (log(`Total CO2 Emissions (non_biogenic)`) - log(`Total CO2 Emissions (non_biogenic)_base`)),
+      `Total CO2 Emissions (non_biogenic)`
+    ),
+    # Calculate contributions using LMDI formulas
+    Delta_Emp = if_else(
+      total_Emp > 1 & total_Emp_base > 1,
+      log_mean * log(total_Emp / total_Emp_base),
+      0
+    ),
+    Delta_EarnS = log_mean * log(avg_EarnS / avg_EarnS_base),
+    Delta_Jbc = if_else(
+      total_FrmJbC > 1 & total_FrmJbC_base > 1,
+      log_mean * log(total_FrmJbC / total_FrmJbC_base),
+      0
+    )
+  ) |>
+  group_by(`NAICS2  (sectors)`) |> 
+  summarize(
+    # Calculate total variation and contributions
+    Total_CO2_var = sum(Delta_Emp + Delta_EarnS + Delta_Jbc, na.rm = TRUE),
+    Contribution_Emp = sum(Delta_Emp, na.rm = TRUE),
+    Contribution_EarnS = sum(Delta_EarnS, na.rm = TRUE),
+    Contribution_Jbc = sum(Delta_Jbc, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Display the results table
+print(lmdi_results)
+
+
+```
+
+
+
 
 ```{r}
 # Calculate Average Variations and Contributions by Sector
@@ -331,13 +385,15 @@ average_summary_table <- lmdi_results |>
   group_by(`NAICS2  (sectors)`) |>
   summarize(
     Avg_CO2_Variation = mean(Total_CO2_var, na.rm = TRUE),
-    Avg_Contribution_Emp = mean(Contribution_Q, na.rm = TRUE),
-    Avg_Contribution_EarnS = mean(Contribution_S, na.rm = TRUE),
+    Avg_Contribution_Emp = mean(Contribution_Emp, na.rm = TRUE),
+    Avg_Contribution_EarnS = mean(Contribution_EarnS, na.rm = TRUE),
+    Avg_Contribution_Jbc = mean(Contribution_Jbc, na.rm = TRUE),,
     .groups = "drop"
   ) |>
   mutate(
     Emp_Percentage = 100 * Avg_Contribution_Emp / Avg_CO2_Variation,
-    EarnS_Percentage = 100 * Avg_Contribution_EarnS / Avg_CO2_Variation
+    EarnS_Percentage = 100 * Avg_Contribution_EarnS / Avg_CO2_Variation,
+    Jbc_Percentage = 100 * Avg_Contribution_Jbc / Avg_CO2_Variation
   )
 
 # Displaying the synthetic table
@@ -349,16 +405,16 @@ print(average_summary_table)
 ```{r}
 
 # First graph with percentage contribution
-plot_data <- average_summary_table |>
-  pivot_longer(cols = c(Emp_Percentage, EarnS_Percentage),
+graph_contrib_percentage <- average_summary_table |>
+  pivot_longer(cols = c(Emp_Percentage, EarnS_Percentage, Jbc_Percentage),
                names_to = "Factor",
                values_to = "Percentage_Contribution")
 
 
-ggplot(plot_data, aes(x = `NAICS2  (sectors)`, y = Percentage_Contribution, fill = Factor)) +
+graph_contrib_percentage |> ggplot(aes(x = `NAICS2  (sectors)`, y = Percentage_Contribution, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
   labs(
-    title = "Percentage Contributions of Employment (Q) and Earnings (S) Factors to CO2 Variations by Sector",
+    title = "Percentage Contributions of Employment (Q), Earnings (S) and Firm Job Change (I) Factors to CO2 Variations by Sector",
     x = "Sector (NAICS 2)",
     y = "Percentage Contribution to CO2 Variation",
     fill = "Factor"
@@ -367,23 +423,36 @@ ggplot(plot_data, aes(x = `NAICS2  (sectors)`, y = Percentage_Contribution, fill
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
-# Second graph with absolute values
-plot_data2 <- average_summary_table |>
-  pivot_longer(cols = c(Avg_Contribution_Emp, Avg_Contribution_EarnS),
-               names_to = "Factor",
-               values_to = "Average_abs_Contribution")
+# Second graph with 0-100% contribution values
 
+## First let's normalize the contributions for each sector to sum to 100%
+normalized_data <- average_summary_table |>
+  mutate(
+    Total_Abs_Contrib = abs(Emp_Percentage) + abs(EarnS_Percentage) + abs(Jbc_Percentage),
+    Emp_Percentage_Norm = abs(Emp_Percentage) / Total_Abs_Contrib * 100,
+    EarnS_Percentage_Norm= abs(EarnS_Percentage) / Total_Abs_Contrib * 100,
+    Jbc_Percentage_Norm = abs(Jbc_Percentage) / Total_Abs_Contrib * 100
+  ) |>
+  select(`NAICS2  (sectors)`, Emp_Percentage_Norm, EarnS_Percentage_Norm, Jbc_Percentage_Norm) |>
+  pivot_longer(
+    cols = c(Emp_Percentage_Norm, EarnS_Percentage_Norm, Jbc_Percentage_Norm),
+    names_to = "Factor",
+    values_to = "Normalized_Percentage_Contribution"
+  )
 
-ggplot(plot_data2, aes(x = `NAICS2  (sectors)`, y = Average_abs_Contribution, fill = Factor)) +
+## Creation of the chart
+normalized_data |> 
+  ggplot(aes(x = `NAICS2  (sectors)`, y = Normalized_Percentage_Contribution, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
   labs(
-    title = "Average absolute Contributions of Employment (Q) and Earnings (S) Factors to CO2 Variations by Sector",
+    title = "Normalized Percentage Contributions of Employment (Q), Earnings (S), and Firm Job Change (I) Factors to CO2 Variations by Sector",
     x = "Sector (NAICS 2)",
-    y = "Average Contribution to CO2 Variation",
+    y = "Normalized Percentage Contribution",
     fill = "Factor"
   ) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 
 ```

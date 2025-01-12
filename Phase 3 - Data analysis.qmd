@@ -22,6 +22,8 @@ library(readr)
 library(httr2)
 
 ## Treatment
+library(dagitty)
+library(ggdag)
 library(tidyr)
 library(dplyr)
 library(knitr)
@@ -43,7 +45,7 @@ library(xtable)
 #| warning: false
 
 # Adding the final dataset
-joined_dataset <- readRDS("joined_dataset.rds")
+joined_dataset <- readRDS("data/joined_dataset.rds")
 ```
 
 ## Methodology
@@ -66,10 +68,6 @@ To compare regulatory environments, we use California as a treatment group. Cali
 #| warning: false
 
 # Creating a Directed Acyclic Graph (DAG), displaying the causal relationships between the variables used in our model
-
-## Installing the packages for the DAG
-library(dagitty)
-library(ggdag)
 
 ## Defining the DAG (first, defining the names and positions of the variables ie. "nodes", and then the orientation of the relations between them)
 dag <- dagitty("
@@ -122,7 +120,7 @@ ggdag(dag, text = FALSE) +
   theme_minimal()
 ```
 
-Variable of interest
+### Variable of interest
 
 Our dependent variable will be `CO2 emissions (non biogenic)`, which corresponds to the unit of metric tons of CO2 (not issued from biomass) annually emitted by energy-producing facilities.
 
@@ -136,7 +134,7 @@ Energy-producing firms can be divided in three groups :
 
 Even if the dataset comprises energy-related facilities, those categorized under other NAICS sectors, such as sector 62 or 72 likely involve other activities as part of or adjacent to the energy infrastructure.
 
-Independent variables
+### Independent variables
 
 There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `total_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
 
@@ -232,7 +230,7 @@ Another key observation is the sector Contribution of each State's total CO2 emi
 
 ## Non-causal analysis
 
-We want to determine the size of the contribution of `avg_EarnS`and `total_Emp` in the changes of `Total CO2 Emissions (non_biogenic)` by `NAICS2  (sectors)` in California and Texas.
+We want to determine the size of the contribution of `avg_EarnS` and `total_Emp` in the changes of `Total CO2 Emissions (non_biogenic)` by `NAICS2  (sectors)` in California and Texas.
 
 
 ### Graphical analysis
@@ -348,7 +346,7 @@ joined_dataset |>
   theme_minimal()
 ```
 
-We observe that in California, where (as we mentioned) the distribution of sectoral `Total CO2 Emissions (non_biogenic)` is less dominated by sectors 21 and 22 like in Texas, the previously observed a general increase in `avg_EarnS` level. In Texas, the second highest sector in terms of CO2 emissions (sector 22) stays relatively stable during the period. Sector 21 seems to be a diverging point in both States. In Texas, we observe an exponential increase in `Total CO2 Emissions (non_biogenic)` from sector 21 from 2018. This could be due to the implementation of new shale oil infrastructures that put Texas in the position of biggest shale oil exporter in the USA. However, average wage in the sector does not follow the trend of an exponential increase (even if it grows steadily during the period). On the contrary, `avg_EarnS` in California increases exponentially while `Total CO2 Emissions (non_biogenic)` from this sector increase more linearly.
+We observe in California, where (as we mentioned) the distribution of sectoral `Total CO2 Emissions (non_biogenic)` is less dominated by sectors 21 and 22 like in Texas, a general increase in `avg_EarnS`  level. In Texas, the second highest sector in terms of CO2 emissions (sector 22) stays relatively stable during the period. Sector 21 seems to be a diverging point in both States. In Texas, we observe an exponential increase in `Total CO2 Emissions (non_biogenic)` from sector 21 from 2018. This could be due to the implementation of new shale oil infrastructures that put Texas in the position of biggest shale oil exporter in the USA. However, average wage in the sector does not follow the trend of an exponential increase (even if it grows steadily during the period). On the contrary, `avg_EarnS` in California increases exponentially while `Total CO2 Emissions (non_biogenic)` from this sector increase more linearly.
 
 ```{r}
 #| echo: false
@@ -410,7 +408,7 @@ $E = \sum_iE_i$
 
 $\leftrightarrow  E = \sum_iQ(Q_i/Q)(E_i/Q_i)$ (by multiplicating and dividing by $Q_i$ and $Q$) thus we obtain
 
-$E = ∑_i(Q_iS_iI_i)$
+$E = ∑_i(QS_iI_i)$
 
 As we explained in the Methodology part, we will choose an additive LMDI due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It has the following structure:
 
@@ -418,7 +416,9 @@ $\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$ with $\Delta E_Q = \sum_i L(E^
 
 $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$
 
-and $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ with $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ defined as the logarithm mean.
+and $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ 
+
+with $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ defined as the logarithm mean.
 
 The analysis will be conducted from 2013 to 2023, thus we will study the long run contribution over the period. Based on the previous equations we derive the contribution of each factor depending on the sector (in total and in percentage) as well as the total variation of CO2 over the period obtained from the sum of all factor variations.
 
@@ -529,9 +529,9 @@ contribution_summary_table_values |>
     )
 ```
 
-First, we observe the difference in variations among sectors which correlates with the magnitude of each sector and the CO2 emissions associated. A huge sector in terms of emission (e.g. 21) provokes more CO2 variations across time but encompasses, as we’ve seen, more firms. As we are more interested in relative contribution, those values only provide information on the magnitude of the variation without giving a clear view of their drivers. Nonetheless we observe the trend for CO2 emissions of each sector and still find the huge positive variations for sectors such as 21 and 32 similar to the hikes described in the graphical representations.
+First, we observe the difference in variations among sectors which correlates with the magnitude of each sector and the CO2 emissions associated (Table 4). A huge sector in terms of emission (e.g. 21) provokes more CO2 variations across time but encompasses, as we’ve seen, more firms. As we are more interested in relative contribution, those values only provide information on the magnitude of the variation without giving a clear view of their drivers. Nonetheless we observe the trend for CO2 emissions of each sector and still find the huge positive variations for sectors such as 21 and 32 similar to the hikes described in the graphical representations.
 
-Then, if we analyse the contribution in percentage (columns 6-8) we can observe the relative importance of a factor on CO2 emissions in a specific sector between 2013 and 2023. The sum of the three drivers sums up to 100% but there is, at this point, no normalization on the values; thus, we can observe contributions of more than 100% if the variations of a factor is higher than the ones related to CO2 emissions. An interesting finding is the extremely high values for some sectors such as 22 (Utilities) which encompass for example electric power generation and natural gas distribution. For this case we observe that the Intensity factor has a great positive contribution in the variation (1141%) suggesting that the increase in carbon intensity of this sector was large but covered by the decreasing activity and the shrinking relative part of the industry in the total sector.
+Then, if we analyse the contribution in percentage (Table 3) we can observe the relative importance of a factor on CO2 emissions in a specific sector between 2013 and 2023. The sum of the three drivers sums up to 100% but there is, at this point, no normalization on the values; thus, we can observe contributions of more than 100% if the variations of a factor is higher than the ones related to CO2 emissions. An interesting finding is the extremely high values for some sectors such as 22 (Utilities) which encompass for example electric power generation and natural gas distribution. For this case we observe that the Intensity factor has a great positive contribution in the variation (1141%) suggesting that the increase in carbon intensity of this sector was large but covered by the decreasing activity and the shrinking relative part of the industry in the total sector.
 
 Overall, the Intensity factor has a positive coefficient, underlining the fact that increased carbon-intense activities per industry produces more C02 emissions. The other two contributions are less straightforward since Activity is theoretically a positive driver of emissions since an increased workforce size in the sector should translate into more production and, thus, more emissions. Hence, its negative coefficients in 8 sectors, and of great magnitude in sectors 54, 48 and 22, seems surprising. Possible explanation lies in investment on infrastructures between 2013 and 2023. For example, the Texan power plants associated with the Utilities sector may have increased their technology and their energy mix resulting in lower emissions even though their output is increasing. Another one is the close-to-zero emission values of small sectors that provoke a more imprecise contribution analysis (as an outlier). In this case the sector 54 that represents 0.0008% of total emissions seems to embody this aspect. Finally, the structure appears to also have 8 negative coefficients, meaning that the increase of a firm in its sector would decrease its emission. This result is quite surprising because we expect the opposite, as in sector 21 with increased relative share of the industry linked to higher emissions. Investment in cleaner plants and adoption of greener technologies could be a solution, since an increased share often translates into more budget available for innovation.
 
@@ -728,7 +728,7 @@ To identify if the program significantly affects the CO2 Emissions of industries
 Therefore, we establish a relationship between our workforce characteristics, Average Monthly Wage and Total Employment and CO2 Emissions by NAICS 4 sectors (i.e. at industry level) in California and Texas according to the following equation :
 
 $$
-log(CO_2 \space emissions) = \beta_0 + log(Average \space Monthly \space Wage)\beta_1 + log(Total \space Employment)\beta_2 + \epsilon
+log(CO_2 \space emissions) = \beta_0 + \beta_1log(Earnings) + \beta_2log(Employment) + \epsilon
 $$
 
 where CO2 Emissions corresponds to the logarithm of total CO2 Emissions (in unit metric tons) of one industry (NAICS4 level of aggregation); ln earn corresponds to the logarithm of average Monthly wage in one industry; ln emp corresponds to the logarithm of the total number of employees in one industry.
@@ -784,7 +784,7 @@ To model the effect of the program, we created a dummy corresponding to the regu
 Completing the previous model, we now have the following equation :
 
 $$
-log(CO_2 \space emissions) = \beta_0 + log(Earnings)\beta_1 + log(Employment)\beta_2 + Policy\beta_3 + \epsilon
+log(CO_2 \space emissions) = \beta_0 + \beta_1log(Earnings) + \beta_2log(Employment) + \beta_3Policy + \epsilon
 $$
 
 Applying OLS, we now have the following results :
@@ -879,10 +879,10 @@ We can assess normality of residuals by first plotting the residuals in a Q-Q pl
 The conclusions of the previous tests lead us to consider that heterogeneity in the relationship between our dependent variable and independent variables may bias our results. The graphical analysis effectuated in the first part of the paper showed heterogeneity of workforce characteristics at a sectoral level (NAICS 2 level of aggregation). To confirm this hypothesis, we introduce a fixed-effect model following this equation :
 
 $$
-log(CO_2 \space emissions) = \beta_0 + log(Earnings)\beta_1 + log(Employment)\beta_2 + Policy\beta_3 \space\|\space NAICS 2 \space sectors + \epsilon
+log(CO_2 \space emissions) = \beta_0 + \beta_1log(Earnings) + \beta_2log(Employment) + \beta_3Policy + u_t + \epsilon 
 $$
 
-where NAICS 2 sector corresponds to sectoral fixed effect i.e.controlling for unobserved heterogeneity across sectors. Additionally, we will implement robust standard errors to correct further our heteroscedasticity and normality issues.
+where `u` corresponds to sectoral (NAICS 2) fixed effect i.e.controlling for unobserved heterogeneity across sectors. Additionally, we will implement robust standard errors to correct further our heteroscedasticity and normality issues.
 
 Applying a fixed-effect OLS using the `lfe` package, we now have the following final result :
 

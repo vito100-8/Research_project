@@ -6,7 +6,6 @@ format:
 output:
   pdf_document:
     latex_engine: xelatex
-
 ---
 
 ```{r}
@@ -29,7 +28,6 @@ library(knitr)
 library(kableExtra)
 library(ggplot2)
 library(broom)
-library(cowplot)
 
 ## Regression
 library(modelsummary)
@@ -136,6 +134,8 @@ Energy-producing firms can be divided in three groups :
 
 -   CO2 injection facilities, ie. wells that a CO2 stream into the subsurface (ex. oil pumping).
 
+Even if the dataset comprises energy-related facilities, those categorized under other NAICS sectors, such as sector 62 or 72 likely involve other activities as part of or adjacent to the energy infrastructure.
+
 Independent variables
 
 There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `total_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
@@ -152,6 +152,7 @@ Additionnally, we will create a dummy to separate our analysis such that :
 
 We will study the heterogeneity of response depending on the industry.
 
+
 ## Data Description
 
 The dataset we will be using for our analysis corresponds to a merge of two datasets : one from the US Census Bureau which provides data on Quarterly workforce characteristics of workers in California and Texas, and another from the US Environmental Protection Agency which provides data on energy-producing facilities in the US.
@@ -160,8 +161,8 @@ After merging and cleaning, we ended up with a dataset of 18270 observations fro
 
 The following tables provide an overview of the final joined dataset (Table 1) and a analysis sector by sector of extremum levels and contributions (Table 2).
 
-
-```{r}
+```{r, results='asis'}
+#| label: Summary Tables
 #| echo: false
 #| message: false
 #| warning: false
@@ -220,18 +221,19 @@ dataset_summary |>
 
 NAICS2_level_summary |>
   kable("latex", caption = "Per NAICS 2 database information",format.args = list(decimal.mark = ".", digits = 2)) |>
-  kable_styling( latex_options = c("striped", "hover", "condensed", "scale_down", "line")) 
+  kable_styling(latex_options = c("striped", "hover", "condensed", "scale_down", "line", "hold_position")) 
 
 ```
-
 
 We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To enhance the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019)) but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
 
 Another key observation is the sector Contribution of each State's total CO2 emissions. We notice that the contribution is highly uneven, with sector 21 and 22 accounting for more than 95% of total Texas' emissions while accounting only for around 65% in California. This distribution highltights both Texas' focus on high-emission sectors and California relative diversification in terms of polluting sectors.
 
-## Part 1 : Non-causal analysis
+
+## Non-causal analysis
 
 We want to determine the size of the contribution of `avg_EarnS`and `total_Emp` in the changes of `Total CO2 Emissions (non_biogenic)` by `NAICS2  (sectors)` in California and Texas.
+
 
 ### Graphical analysis
 
@@ -258,7 +260,7 @@ joined_dataset |>
   ## Plotting a barplot for Net EMployment Change
   geom_col(aes(y = total_emp_change_sector, fill = `NAICS2  (sectors)`), alpha = 0.3) +
   ## Renaming the primary axis 
-  scale_y_continuous(name = "Net Employment Change by Sector",
+  scale_y_continuous(name = "Net Employment Change by Sector", 
                      ## Creating a secondary axis for Total Employment, converting back its scale to correctly show the values (multiplying by 10)
                      sec.axis = sec_axis(~ .*5, name = "Total Employment")) +
   labs(title = "Evolution of Total Employment by Sector",
@@ -287,9 +289,7 @@ joined_dataset |>
 
 First, we observe a relatively high dispersion of monthly average wages across sectors. In 2013, `avg_EarnS` ranged from around 3500 to 7500 dollars and in 2023, if we exclude some big outliers, the range was 5000 - 10000\$ . It seems that from 2013 to 2023, the lower wages increased by approximately 40% during the time period, while the highest wages increased by a third. On the other hand, Total Employment stayed relatively stable in most sectors (especially in smaller sectors), with an overall increase in 10 years. Most sectors experienced job contractions during the Covid-period, starting with sector 72 (Accommodation & Food Services). We can observe that sector 21 (Mining, Quarrying & Oil & Gas Extraction) experienced massive lay-offs in 2015 and 2016, probably due to the sharp decline in oil-prices during the mid-2014s, which impacted especially shale oil companies in Texas. This could also have impacted the Manufacturing sector 33 (also shown in the decline during this period).
 
-Note : Even if the dataset comprises energy-related facilities, those categorized under other NAICS sectors, such as sector 62 or 72 likely involve other activities as part of or adjacent to the energy infrastructure.
-
-The second and third graph show, respectively, the evolution of `avg_EarnS` and CO2 Emissions and the evolution of `total_Emp` and CO2 Emissions, both at a sectoral level and by State.
+The following set of graphs show, respectively, the evolution of `avg_EarnS` and CO2 Emissions and the evolution of `total_Emp` and CO2 Emissions, both at a sectoral level and by State.
 
 ```{r}
 #| echo: false
@@ -401,22 +401,26 @@ joined_dataset |>
 
 The `total_Emp` variable seems to be more heterogeneous across sectors as well as across States. As we saw before, the sector dominating in terms of CO2 emissions (sector 21) experienced a sharp decline of employment from 2015 onwards, but continued to increase considerably in terms of `Total CO2 Emissions (non_biogenic)` in Texas. While in Texas, sector 21 seems to be the biggest sector in terms of employment, it is situated in California as one of the smallest. On the contrary, the `total_Emp` in sector 92 in California decreased considerably from 2019, as well as `Total CO2 Emissions (non_biogenic)` in the sector, which was not the case in Texas, where total employment grew steadily. In general, `total_Emp` seems to have stayed relatively constant during the time period, even if `Total CO2 Emissions (non_biogenic)` generally increased (exponentially in Texas).
 
-Note : We chose not to use the `facet.wrap()` command to be able to readjust to scaling between the chosen workforce variable and `Total CO2 Emissions (non_biogenic)` for better visualization.
 
 ### LMDI decomposition
 
-To better analyze the contributions of `total_Emp` we need to analyze precisely its relationship with `Total CO2 Emissions (non_biogenic)`. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173)) and has several possible modelizations. We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests. The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula : $E = \sum_iE_i$ 
-$\leftrightarrow  E = \sum_iQ(Q_i/Q)(E_i/Q_i)$ (by multiplicating and dividing by $Q_i$ and $Q$)  thus we obtain $E = ∑_i(Q_iS_iI_i)$
+To better analyze the contributions of `total_Emp` we need to analyze precisely its relationship with `Total CO2 Emissions (non_biogenic)`. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173)) and has several possible modelizations. We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests. The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula :
+
+$E = \sum_iE_i$
+
+$\leftrightarrow  E = \sum_iQ(Q_i/Q)(E_i/Q_i)$ (by multiplicating and dividing by $Q_i$ and $Q$) thus we obtain
+
+$E = ∑_i(Q_iS_iI_i)$
 
 As we explained in the Methodology part, we will choose an additive LMDI due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It has the following structure:
 
-$\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$ with
-$\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ ;
-$\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$
-and  $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ 
-with $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$  defined as the logarithm mean.
+$\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$ with $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ ;
 
-The analysis will be conducted from 2013 to 2023, thus we will study the long run contribution over the period. Based on the previous equations we derive the contribution of each factor depending on the sector (in total and in percentage) as well as the total variation of CO2 over the period obtained from the sum of all factor variations. 
+$\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$
+
+and $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ with $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ defined as the logarithm mean.
+
+The analysis will be conducted from 2013 to 2023, thus we will study the long run contribution over the period. Based on the previous equations we derive the contribution of each factor depending on the sector (in total and in percentage) as well as the total variation of CO2 over the period obtained from the sum of all factor variations.
 
 ```{r}
 #| echo: false
@@ -480,12 +484,31 @@ contribution_summary_table <- lmdi_results |>
   )
 ```
 
-
-```{r}
+```{r results='asis'}
+#| label: Contribution Tables
 #| echo: false
 #| message: false
 #| warning: false
 
+#Creation of a table for the percentage contribution analysis
+contribution_summary_table_percent <- contribution_summary_table
+
+ contribution_summary_table_percent |>
+  mutate(
+  "Activity contribution (in perc)" = A_Percentage,
+    "Structure contribution (in perc)" = S_Percentage,
+    "Intensity contribution (in perc)" = I_Percentage,
+  .keep = "none"
+  ) |>
+  kable(
+    "latex",
+    caption = "Contribution of each factor (in percentage)", 
+    format.args = list(decimal.mark = ".", digits = 3)
+    ) |>
+  kable_styling(
+    latex_options = c("striped", "hover", "condensed", "scale_down", "line", "hold_position")
+    ) 
+ 
 # Table summarizing contributions in values
 contribution_summary_table_values  <- contribution_summary_table
 contribution_summary_table_values |>
@@ -502,36 +525,15 @@ contribution_summary_table_values |>
     format.args = list(decimal.mark = ".", digits = 3)
     ) |>
   kable_styling(
-    latex_options = c("striped", "hover", "condensed", "scale_down", "line")
-    )
-
-#Creation of a second table for the percentage contribution analysis
-contribution_summary_table_percent <- contribution_summary_table
-
- contribution_summary_table_percent |>
-  mutate(
-  "Activity contribution (in %)" = A_Percentage,
-    "Structure contribution (in %)" = S_Percentage,
-    "Intensity contribution (in %)" = I_Percentage,
-  .keep = "none"
-  ) |>
-  kable(
-    "latex",
-    caption = "Contribution of each factor (%)", 
-    format.args = list(decimal.mark = ".", digits = 3)
-    ) |>
-  kable_styling(
     latex_options = c("striped", "hover", "condensed", "scale_down", "line", "hold_position")
-    ) 
-
+    )
 ```
 
-Firstly, we observe the difference in variations among sectors which correlates with the magnitude of each sector and the CO2 emissions associated. A huge sector in terms of emission (e.g. 21) provokes more CO2 variations across time but encompasses, as we’ve seen, more firms. As we are more interested in relative contribution, those values only provide information on the magnitude of the variation without giving a clear view of their drivers. Nonetheless we observe the trend for CO2 emissions of each sector and still find the huge positive variations for sectors such as 21 and 32 similar to the hikes described in the graphical representations.
+First, we observe the difference in variations among sectors which correlates with the magnitude of each sector and the CO2 emissions associated. A huge sector in terms of emission (e.g. 21) provokes more CO2 variations across time but encompasses, as we’ve seen, more firms. As we are more interested in relative contribution, those values only provide information on the magnitude of the variation without giving a clear view of their drivers. Nonetheless we observe the trend for CO2 emissions of each sector and still find the huge positive variations for sectors such as 21 and 32 similar to the hikes described in the graphical representations.
 
-Then, if we analyse the contribution in percentage (columns 6-8) we can observe the relative importance of a factor on CO2 emissions in a specific sector between 2013 and 2023. The sum of the three drivers sums up to 100% but there is, at this point, no normalization on the values; thus, we can observe  contributions of more than 100% if the variations of a factor is higher than the ones related to CO2 emissions. An interesting finding is the extremely high values for some sectors such as 22 (Utilities) which encompass for example electric power generation and natural gas distribution. For this case we observe that the Intensity factor has a great positive contribution in the variation (1141%) suggesting that the increase in carbon intensity of this sector was large but covered by the decreasing activity and the shrinking  relative part of the industry in the total sector.
+Then, if we analyse the contribution in percentage (columns 6-8) we can observe the relative importance of a factor on CO2 emissions in a specific sector between 2013 and 2023. The sum of the three drivers sums up to 100% but there is, at this point, no normalization on the values; thus, we can observe contributions of more than 100% if the variations of a factor is higher than the ones related to CO2 emissions. An interesting finding is the extremely high values for some sectors such as 22 (Utilities) which encompass for example electric power generation and natural gas distribution. For this case we observe that the Intensity factor has a great positive contribution in the variation (1141%) suggesting that the increase in carbon intensity of this sector was large but covered by the decreasing activity and the shrinking relative part of the industry in the total sector.
 
-Overall the Intensity factor has a positive coefficient, underlining the fact that increased carbon-intense activities per industry produces more C02 emissions. The other two contributions are less straightforward since Activity is theoretically a positive driver of emissions since an increased workforce size in the sector should translate into more production and, thus, more emissions. Hence, its negative coefficients in 8 sectors, and of great magnitude in sectors 54, 48 and 22, seems surprising. Possible explanation lies in investment on infrastructures between 2013 and 2023. For example, the Texan power plants associated with the Utilities sector may have increased their technology and their energy mix resulting in lower emissions even though their output is increasing. Another one is the close-to-zero emission values of  small sectors that provoke a more imprecise contribution analysis (as an outlier). In this case the sector 54 that represents 0.0008% of total emissions seems to embody this aspect. Finally, the structure appears to also have 8 negative coefficients, meaning that the increase of a firm in its sector would decrease its emission. This result is quite surprising because we expect the opposite, as in sector 21 with increased relative share of the industry linked to higher emissions. Investment in cleaner plants and adoption of greener technologies could be a solution, since an increased share often translates into more budget available for innovation.
-
+Overall, the Intensity factor has a positive coefficient, underlining the fact that increased carbon-intense activities per industry produces more C02 emissions. The other two contributions are less straightforward since Activity is theoretically a positive driver of emissions since an increased workforce size in the sector should translate into more production and, thus, more emissions. Hence, its negative coefficients in 8 sectors, and of great magnitude in sectors 54, 48 and 22, seems surprising. Possible explanation lies in investment on infrastructures between 2013 and 2023. For example, the Texan power plants associated with the Utilities sector may have increased their technology and their energy mix resulting in lower emissions even though their output is increasing. Another one is the close-to-zero emission values of small sectors that provoke a more imprecise contribution analysis (as an outlier). In this case the sector 54 that represents 0.0008% of total emissions seems to embody this aspect. Finally, the structure appears to also have 8 negative coefficients, meaning that the increase of a firm in its sector would decrease its emission. This result is quite surprising because we expect the opposite, as in sector 21 with increased relative share of the industry linked to higher emissions. Investment in cleaner plants and adoption of greener technologies could be a solution, since an increased share often translates into more budget available for innovation.
 
 ```{r}
 #| echo: false
@@ -555,7 +557,7 @@ normalized_data <- contribution_summary_table |>
     values_to = "Normalized_Percentage_Contribution"
   )
 
-# ploting the values with bar filled (0-100%) to see the relative contribution of each factor for each sector (absolute values)
+# Plotting the values with bar filled (0-100%) to see the relative contribution of each factor for each sector (absolute values)
 normalized_data |> 
   ggplot(aes(x = `NAICS2  (sectors)`, y = Normalized_Percentage_Contribution, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
@@ -570,7 +572,7 @@ normalized_data |>
 
 ```
 
-For a clearer analysis, we normalize the contribution to see the relative contribution of each driver (in percentage) on emissions. We observe that the intensity factor plays a greater role overall, underlining the fact that carbon efficiency  (here emissions divided by  the workforce size of the industry) is crucial for energy-producing firms.
+For a clearer analysis, we normalize the contribution to see the relative contribution of each driver (in percentage) on emissions. We observe that the intensity factor plays a greater role overall, underlining the fact that carbon efficiency (here emissions divided by the workforce size of the industry) is crucial for energy-producing firms.
 
 ```{r}
 #| echo: false
@@ -606,8 +608,7 @@ ggplot(relative_contrib_between_var, aes(x = Average_Percentage_Contribution, y 
 
 The latter observation is confirmed by this chart since it shows that the relative importance of Intensity is higher than the importance of the other factors combined. Particularly we observe that the share of the industry is the least important factor, meaning that the sector share of an industry is not the main driver of carbon emissions.
 
-As we’ve seen sectors 21 and 22 represent  98% of total emissions, we will perform a LMDI decomposition on these sectors and separate the State to better analyze them according to their location. The first chart will be in values to display the difference of magnitude between them and the second in relative contribution
-
+As we’ve seen sectors 21 and 22 represent 98% of total emissions, we will perform a LMDI decomposition on these sectors and separate the State to better analyze them according to their location. The first chart will be in values to display the difference of magnitude between them and the second in relative contribution.
 
 ```{r}
 #| echo: false
@@ -665,10 +666,10 @@ state_contributions <- state_sector_lmdi |>
     values_to = "Contribution"
   )
 
-# Ploting absolute contributions
+# Plotting absolute contributions
 ggplot(state_contributions, aes(x = `NAICS2  (sectors)`, y = Contribution, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
-  ## separate by State
+  ## Separate by State
   facet_wrap(~ State) +
   labs(
     title = "Contributions of Factors to CO2 Variations in NAICS 21 and 22 by State",
@@ -677,13 +678,9 @@ ggplot(state_contributions, aes(x = `NAICS2  (sectors)`, y = Contribution, fill 
     fill = "Factor"
   ) +
   theme_minimal()
-
-
-
 ```
 
-We firstly notice the difference of contribution depending on the State : it emphasizes the importance of Texas in emissions, especially compared to California.
-It then  appears that the majority of the emission’s increases in Texas is linked to Intensity. It reveals that the hike we previously mentioned is probably due to a worse energy mix and technology of production, the fracking which increased between the two periods is an example of such worsening.
+We first notice the difference of contribution depending on the State : it emphasizes the importance of Texas in emissions, especially compared to California. It then appears that the majority of the emission’s increases in Texas is linked to Intensity. It reveals that the hike we previously mentioned is probably due to a worse energy mix and technology of production, the fracking which increased between the two periods is an example of such worsening.
 
 ```{r}
 #| echo: false
@@ -703,7 +700,7 @@ state_relative <- state_sector_lmdi |>
     values_to = "Percentage"
   )
 
-# Ploting relative contributions
+# Plotting relative contributions
 ggplot(state_relative, aes(x = `NAICS2  (sectors)`, y = Percentage, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
   facet_wrap(~ State) +
@@ -716,13 +713,13 @@ ggplot(state_relative, aes(x = `NAICS2  (sectors)`, y = Percentage, fill = Facto
   theme_minimal()
 ```
 
-
 The relative contribution also displays the greater role of Intensity for each sector, except for the 21 sectors in California where the structure has a higher contribution. Perhaps, it comes from the fact that California implemented environmental measures, for example the Cap-and-Trade studied in the next part, in the time period, thus resulting in significant share changes between the industries depending on their reactions and energetic mix. Activity maintains a contribution around 10% for each sector denoting a relative quasi-stability of its effect on those industries (although the opposite reaction of each industry's emissions to the factor).
 
 
 ## Model Fitting
 
 In the second part of the analysis, we want to analyse the effect of the Cap-and-Trade program put in place in California since 2015 and which is enforced by the California Air Resources Board (CARB). It is a market-based system which sets a cap (a limit) to the number of greenhouse gas emissions released by facilities during a period. Within this cap, emission allowances are distributed by a mix of free allocation and quarterly auctions, which can be traded by facilities within the cap. Since 2015, the cap-and-trade rules apply to electric power plants, industrial plants and fuel distributors that emit 25,000 tons of carbon dioxide equivalent per year or more.
+
 
 ### Base Model
 
@@ -745,10 +742,9 @@ Using the Ordinary Least Squares method, we obtain the following results :
 ## Defining logarithmic variables to rationalize outliers/zero values 
 dataset_for_ols <- joined_dataset |> 
   filter(`Total CO2 Emissions (non_biogenic)` > 0 & total_Emp > 0) |>
-  mutate(`ln Total CO2 Emissions` = log(`Total CO2 Emissions (non_biogenic)`), `ln emp` = log(total_Emp), `ln earn` = log(avg_EarnS))
+  mutate(`ln Total CO2 Emissions` = log(`Total CO2 Emissions (non_biogenic)`), `ln Employment` = log(total_Emp), `ln Earnings` = log(avg_EarnS))
 
 ```
-
 
 ```{r}
 #| echo: false
@@ -756,12 +752,11 @@ dataset_for_ols <- joined_dataset |>
 #| warning: false
 
 ## Running the base regression
-base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
+base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln Earnings` + `ln Employment`, data = dataset_for_ols)
 
 ```
 
-
-```{r results='asis'}
+```{r, results='asis'}
 #| echo: false
 #| message: false
 #| warning: false
@@ -774,16 +769,13 @@ xtable::print.xtable(
   xtable_table,
   include.rownames = FALSE,
   comment = FALSE
-  
 )
-
 ```
 
-
-
-We observe that the variable `ln earn` is positive and highly significant with a p-value of less than 2e-16. That means that all else equal, a 1% increase in average monthly wage is associated with an approximately 3.04 % increase in CO2 emissions. On the other hand, `ln emp` is not statistically significant and is positively correlated with CO2 emissions : all else equal, a 1% increase of Total Employment in an industry is associated with a 0,06% increase of CO2 Emissions in that industry. These results partially contradict our initial hypothesis. On one hand, the higher the wage, the higher the CO2 emissions in an industry. If this result does not condone the concept of “green jobs”, it aligns with the IEA’s report, according to which higher-emitting industries, like oil extraction, pay higher wages to employees than more volatile industries. On the other hand, the more employees there are, the higher the emissions (even if not significantly). This confirms the idea that employment size works as a proxy for industry size. The bigger the industry, the more it should emit.
+We observe that the variable `ln Earnings` is positive and highly significant with a p-value of less than 2e-16. That means that all else equal, a 1% increase in average monthly wage is associated with an approximately 3.04 % increase in CO2 emissions. On the other hand, `ln Employment` is not statistically significant and is positively correlated with CO2 emissions : all else equal, a 1% increase of Total Employment in an industry is associated with a 0,06% increase of CO2 Emissions in that industry. These results partially contradict our initial hypothesis. On one hand, the higher the wage, the higher the CO2 emissions in an industry. If this result does not condone the concept of “green jobs”, it aligns with the IEA’s report, according to which higher-emitting industries, like oil extraction, pay higher wages to employees than more volatile industries. On the other hand, the more employees there are, the higher the emissions (even if not significantly). This confirms the idea that employment size works as a proxy for industry size. The bigger the industry, the more it should emit.
 
 The R² and Adjusted R² are both 0.17, which means that approximately 17% of the changes in CO2 emissions can be explained by variations of workforce characteristics. This relatively low value indicated probable OVB, as we did not include traditional explanatory variables in our model, such as energy consumption for example. Nonetheless, we have an F-statistic of 106.4 (p-value \< 2.2e-16), which indicates overall, our model is statistically significant.
+
 
 ### Extended model with dummy variable
 
@@ -792,7 +784,7 @@ To model the effect of the program, we created a dummy corresponding to the regu
 Completing the previous model, we now have the following equation :
 
 $$
-log(CO_2 \space emissions) = \beta_0 + log(Average \space Monthly \space Wage)\beta_1 + log(Total \space Employment)\beta_2 + Policy\beta_3 + \epsilon
+log(CO_2 \space emissions) = \beta_0 + log(Earnings)\beta_1 + log(Employment)\beta_2 + Policy\beta_3 + \epsilon
 $$
 
 Applying OLS, we now have the following results :
@@ -805,14 +797,13 @@ Applying OLS, we now have the following results :
 ## Defining a dummy variable for State, which takes the value 1 for Texas and 0 for California
 dataset_for_ols <-
   dataset_for_ols |>
-  mutate(state_dummy = if_else(State == "CA" & year > 2015, 1, 0))
+  mutate(Policy = if_else(State == "CA" & year > 2015, 1, 0))
 
-extend_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp` + state_dummy, data = dataset_for_ols)
+extend_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln Earnings` + `ln Employment` + Policy, data = dataset_for_ols)
 
 ```
 
-
-```{r  results='asis'}
+```{r,  results='asis'}
 #| echo: false
 #| message: false
 #| warning: false
@@ -828,11 +819,13 @@ xtable::print.xtable(
 
 ```
 
-As in the previous results, we still have a positive and highly significant correlation between average monthly wage and CO2 emissions per industry : A 1% increase in average wages is associated with approximately a 3.16% increase in CO2 emissions, keeping all other variables constant. On the contrary ln emp is still not statistically significant (p-value = 0.134) and is still positive. Finally, the dummy `Environment` proves to be highly significant (p-value \< 0.01) and positive. We could infer that firms in California after the introduction of the cap-and-trade program in 2015 emit approximately 90% less CO2 than firms in Texas during the same period, controlling for wages and employment. This result confirms our main hypothesis : The cap-and-trade program has a significant effect on the emissions of industries in our dataset.
+As in the previous results, we still have a positive and highly significant correlation between average monthly wage and CO2 emissions per industry : A 1% increase in average wages is associated with approximately a 3.16% increase in CO2 emissions, keeping all other variables constant. On the contrary ln emp is still not statistically significant (p-value = 0.134) and is still positive. Finally, the dummy `Policy` proves to be highly significant (p-value \< 0.01) and positive. We could infer that firms in California after the introduction of the cap-and-trade program in 2015 emit approximately 90% less CO2 than firms in Texas during the same period, controlling for wages and employment. This result confirms our main hypothesis : The cap-and-trade program has a significant effect on the emissions of industries in our dataset.
 
 Additionally, the Adjusted R² is 0.1994, slightly higher than the previous model (0.1784), which shows in theory that including the Environment dummy improves our model.
 
+
 ## Model Extension and Fixed Effects
+
 
 ### Testing the model
 
@@ -862,8 +855,7 @@ bp_values <- data.frame(
 )
 ```
 
-
-```{r  results='asis'}
+```{r,  results='asis'}
 #| echo: false
 #| message: false
 #| warning: false
@@ -879,27 +871,28 @@ xtable::print.xtable(
 
 ```
 
-We can assess normality of residuals by first plotting the residuals in a Q-Q plot. We observe that while the residuals follow the diagonal line in general, the points deviate significantly in the tails.This implies that the residuals are not normally distributed. Secondly, the Residuals vs. Fitted plot reveals that the residuals of the regression are not randomly scattered, as they should be in the absence of heteroscedasticity. On the contrary, the residuals seem to follow a decreasing funnel shape, which suggests non-constant variance of the residuals i.e. presence of heteroscedasticity. This result is further confirmed after implementing a Breusch-Pagan test of heteroscedasticity : the p-value < 2.2e-16 confirms the presence of strong heteroscedasticity which we will proceed to correct in the next section.
+We can assess normality of residuals by first plotting the residuals in a Q-Q plot. We observe that while the residuals follow the diagonal line in general, the points deviate significantly in the tails.This implies that the residuals are not normally distributed. Secondly, the Residuals vs. Fitted plot reveals that the residuals of the regression are not randomly scattered, as they should be in the absence of heteroscedasticity. On the contrary, the residuals seem to follow a decreasing funnel shape, which suggests non-constant variance of the residuals i.e. presence of heteroscedasticity. This result is further confirmed after implementing a Breusch-Pagan test of heteroscedasticity : the p-value \< 2.2e-16 confirms the presence of strong heteroscedasticity which we will proceed to correct in the next section.
+
 
 ### Introducing fixed effects
 
 The conclusions of the previous tests lead us to consider that heterogeneity in the relationship between our dependent variable and independent variables may bias our results. The graphical analysis effectuated in the first part of the paper showed heterogeneity of workforce characteristics at a sectoral level (NAICS 2 level of aggregation). To confirm this hypothesis, we introduce a fixed-effect model following this equation :
 
 $$
-log(CO_2 \space emissions) = \beta_0 + log(Average \space Monthly \space Wage)\beta_1 + log(Total \space Employment)\beta_2 + Policy\beta_3 \space\|\space NAICS 2 \space sectors + \epsilon
+log(CO_2 \space emissions) = \beta_0 + log(Earnings)\beta_1 + log(Employment)\beta_2 + Policy\beta_3 \space\|\space NAICS 2 \space sectors + \epsilon
 $$
 
 where NAICS 2 sector corresponds to sectoral fixed effect i.e.controlling for unobserved heterogeneity across sectors. Additionally, we will implement robust standard errors to correct further our heteroscedasticity and normality issues.
 
 Applying a fixed-effect OLS using the `lfe` package, we now have the following final result :
 
-```{r  results='asis'}
+```{r,  results='asis'}
 #| echo: false
 #| message: false
 #| warning: false
 
 ## Introducing fixed effect year
-fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln earn` + `ln emp` + state_dummy | `NAICS2  (sectors)`, data = dataset_for_ols)
+fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln Earnings` + `ln Employment` + Policy | `NAICS2  (sectors)`, data = dataset_for_ols)
 
 ## Summary of fixed-effect model
 
@@ -913,13 +906,11 @@ xtable::print.xtable(
 
 ```
 
-The `ln earn` variable remains highly significant and positively correlated with CO2 emissions, just like in the previous results. The high similarity between the coefficients in all three models implies that wage does not correlate that differently with CO2 emissions across sectors. Similarly, the Environment dummy keeps its negative sign (-0.94) and gains significance (p = 9.22e-11). After controlling for sectoral fixed effects, firms in California, since the Cap-and-Trade program, emit approximately 94% less CO2 than similar firms in Texas or California pre-2015, thus corresponding to our previous result. Finally, the variable `ln emp` is now negatively correlated with CO2 emissions of industries (-0.004), but still not statistically significant (p = 0.942). The negative sign could be due to the fact that high-emitting industries (like fuel suppliers) may be more capital-intensive than labor intensive. Sectoral differences could have been masking the true effect of employment size on CO2 emissions of industries. We could indeed infer from the result that labor-intensive industries, i.e. that have more employees emit less than capital-intensive industries. However, this hypothesis should be relativized as the variable is even less significant than before.
+The `ln Earnings` variable remains highly significant and positively correlated with CO2 emissions, just like in the previous results. The high similarity between the coefficients in all three models implies that wage does not correlate that differently with CO2 emissions across sectors. Similarly, the Environment dummy keeps its negative sign (-0.94) and gains significance (p = 9.22e-11). After controlling for sectoral fixed effects, firms in California, since the Cap-and-Trade program, emit approximately 94% less CO2 than similar firms in Texas or California pre-2015, thus corresponding to our previous result. Finally, the variable `ln Employment` is now negatively correlated with CO2 emissions of industries (-0.004), but still not statistically significant (p = 0.942). The negative sign could be due to the fact that high-emitting industries (like fuel suppliers) may be more capital-intensive than labor intensive. Sectoral differences could have been masking the true effect of employment size on CO2 emissions of industries. We could indeed infer from the result that labor-intensive industries, i.e. that have more employees emit less than capital-intensive industries. However, this hypothesis should be relativized as the variable is even less significant than before.
 
 Compared to the previous model, the residual standard error has decreased to 2.085 (from a previous 2.314), which indicates improved fit. The Adjusted R² is now 0.3497, which is much higher than in the previous models (lower than 20%). The fixed effects improve the explanatory power of the model, also highlighted by a high F-statistic (72.33). Overall, the fixed-effects model seems to provide more reliable results compared to the earlier models.
 
+
 ## Conclusion
 
-In this work we studied the CO2 emissions of energy-producing firms in California and Texas and found that, according to the EIA's terminology and its data, Texas' firms emit, on average, a lot more than their Californian counterparts. This is particularly true for the Mining, Quarrying, and Oil and Gas Extraction (21) and Utilities (22) sectors that amount for nearly all emissions across our dataset. We observed that wages were correlated positively with the CO2 emissions while the pattern with total employment was more opaque. The LMDI decomposition method was used to evaluate the contributions of Quantity, Structural and Intensity drivers on the emissions by using total employment as proxy for industry size (and inputs utilization). We determined that carbon-intensity was the largest contribution on average while pure quantity effect was the smallest, revealing  potential weakness in our choice of proxy. Finally, we developed a regression model to assess the effect of an environmental policies and confirmed the small significance of total employment. The results led us to conclude that is had a substantial effect on the reduction of C02 emissions. Moreover, earnings were also highlighted as a significant drivers of carbon emissions across our models. 
-The work has several limitations. The main ones that occured to us are the data coverage, with several missing values in both datasheets that were not treated but filtered out, which may have induced bias in our results; the lack of control with traditional variables to avoid omitted variable bias, for example we did not include data about energy consumption (used in the vast majority of research papers).  
-
-
+In this work we studied the CO2 emissions of energy-producing firms in California and Texas and found that, according to the EIA's terminology and its data, Texas' firms emit, on average, a lot more than their Californian counterparts. This is particularly true for the Mining, Quarrying, and Oil and Gas Extraction (21) and Utilities (22) sectors that amount for nearly all emissions across our dataset. We observed that wages were correlated positively with the CO2 emissions while the pattern with total employment was more opaque. The LMDI decomposition method was used to evaluate the contributions of Quantity, Structural and Intensity drivers on the emissions by using total employment as proxy for industry size (and inputs utilization). We determined that carbon-intensity was the largest contribution on average while pure quantity effect was the smallest, revealing potential weakness in our choice of proxy. Finally, we developed a regression model to assess the effect of an environmental policies and confirmed the small significance of total employment. The results led us to conclude that is had a substantial effect on the reduction of C02 emissions. Moreover, earnings were also highlighted as a significant drivers of carbon emissions across our models. The work has several limitations. The main ones that occured to us are the data coverage, with several missing values in both datasheets that were not treated but filtered out, which may have induced bias in our results; the lack of control with traditional variables to avoid omitted variable bias, for example we did not include data about energy consumption (used in the vast majority of research papers).

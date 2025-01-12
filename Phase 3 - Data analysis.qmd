@@ -214,11 +214,7 @@ NAICS2_level_summary |>
 
 We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To enhance the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019)) but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
 
-Another key observation is the sector Contribution of each State's total CO2 emissions. We notice that the contribution is highly uneven, with sector 21 and 22 accounting for more than 95% of total Texas' emissions while accounting only for around 65% in California.
-
--- faire un graphique
-
-The latter State has more sectors that -- continuer l'analyse
+Another key observation is the sector Contribution of each State's total CO2 emissions. We notice that the contribution is highly uneven, with sector 21 and 22 accounting for more than 95% of total Texas' emissions while accounting only for around 65% in California. This distribution highltights both Texas' focus on high-emission sectors and California relative diversification in terms of polluting sectors.
 
 ## Part 1 : Non-causal analysis
 
@@ -284,6 +280,11 @@ plot_grid(
   graph_emp1, graph_wage1, legend, 
   ncol = 3, rel_widths = c(1, 0.8, 0.3))
 ```
+First, we observe a relatively high dispersion of monthly average wages across sectors.In 2013, wages ranged from around 3500 to 7500 dollars and in 2023, if we exclude some big outliers, the range was 5000 - 10000$.  It seems that from 2013 to 2023, the lower wages increased by approximately 40% during the time period, while the highest wages increased by a third. On the other hand, Total Employment stayed relatively stable in most sectors (especially in smaller sectors), with an overall increase in 10 years. Most sectors experienced job contractions during the Covid-period, starting with sector 72 (Accommodation & Food Services). We can observe that sector 21 (Mining, Quarrying & Oil & Gas Extraction) experienced massive lay-offs in 2015 and 2016, probably due to the sharp decline in oil-prices during the mid-2014s, which impacted especially shale oil companies in Texas. This could also have impacted the Manufacturing sector 33 (also shown in the decline during this period). 
+
+Note : Even if the dataset comprises energy-related facilities, those categorized under other NAICS sectors, such as sector 62 or 72 likely involve other activities as part of or adjacent to the energy infrastructure. 
+
+
 
 ```{r}
 #| echo: false
@@ -409,7 +410,16 @@ plot_grid(
 
 ### LMDI decomposition
 
-$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ \$ E = ∑\_i(Q_iS_iI_i)\$ $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ $\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$
+
+$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ $E = ∑_i(Q_iS_iI_i)$ $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ $\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$
+
+
+To better analyze the contributions of employment we need to analyze precisely its relationship with the Total C02 emissions. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z ) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173 )) and has several possible modelizations. 
+We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests.
+The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the  quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula : 
+
+
+As we explained in the Methodology part, we will choose an additive LMDI  due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It follows the following structure of our model :
 
 ```{r}
 # Calculate Q (Total Employment), S (Activity Share), and I (Intensity)
@@ -479,6 +489,7 @@ contribution_summary_table |>
   kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
 
 ```
+
 
 ```{r}
 # Graphical representation updated with A (Activity), S (Structure), and I (Intensity)

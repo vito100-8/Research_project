@@ -125,11 +125,11 @@ Energy-producing firms can be divided in three groups :
 
 Independent variables
 
-There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `avg_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
+There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `total_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
 
 We chose to use `avg_EarnS` as a proxy for workforce skill level and investment in human capital. The idea behind this is that "greener jobs" (so here represented by jobs associated with firms emitting relatively low levels of C02) tends to hire more skilled workers (see [Bowen et al., 2018](https://www.sciencedirect.com/science/article/pii/S0140988318300963), [Elliott and Lindley (2017)](https://www.sciencedirect.com/science/article/abs/pii/S0921800916311442)) with higher wages associated. Therefore, we expect a negative relationship between wage and CO2 emissions. 
 
-Another key variable is Net employment change (`avg_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
+Another key variable is Net employment change (`total_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
 
 Additionnally, we create dummies to separate our analysis in groups :
 
@@ -530,12 +530,12 @@ ggplot(plot_data2, aes(x = `NAICS2  (sectors)`, y = Average_abs_Contribution, fi
 
 ## Defining logarithmic variables to rationalize outliers/zero values 
 dataset_for_ols <- joined_dataset |> 
-  filter(`NAICS2  (sectors)` == 21) |> 
-  rename ( `Total CO2 Emissions (non_biogenic) test` =  `Total CO2 Emissions (non_biogenic)`) |>
-  mutate(`ln Total CO2 Emissions test` = log(`Total CO2 Emissions (non_biogenic) test`), `ln emp` = log(total_Emp), `ln earn` = log(avg_EarnS))
+  filter(`Total CO2 Emissions (non_biogenic)` > 0 & total_Emp > 0) |>
+  mutate(`ln Total CO2 Emissions` = log(`Total CO2 Emissions (non_biogenic)`), `ln emp` = log(total_Emp), `ln earn` = log(avg_EarnS))
+
 
 ## Running the base regression
-base_ols_model <- lm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
+base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
 
 ## Summary of the OLS results
 summary(base_ols_model)
@@ -548,9 +548,9 @@ summary(base_ols_model)
 ## Defining a dummy variable for State, which takes the value 1 for Texas and 0 for California
 dataset_for_ols <-
   dataset_for_ols |>
-  mutate(state_dummy = if_else(State == "TX", 1, 0))
+  mutate(state_dummy = if_else(State == "CA" & year > 2015, 1, 0))
 
-extend_ols_model <- lm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp` + state_dummy, data = dataset_for_ols)
+extend_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp` + state_dummy, data = dataset_for_ols)
 
 summary(extend_ols_model)
 
@@ -576,7 +576,7 @@ bptest(extend_ols_model)
 ### Introducing fixed effects
 ```{r}
 ## Introducing fixed effect year
-fe_ols_model <- feols(log(`Total CO2 Emissions (non_biogenic) test`) ~  `ln earn` + `ln emp` + state_dummy | year, data = dataset_for_ols)
+fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln earn` + `ln emp` + state_dummy | `NAICS2  (sectors)`, data = dataset_for_ols)
 
 ## Summary of fixed-effect model with robust standard errors
 summary(fe_ols_model, vcov = "hetero")

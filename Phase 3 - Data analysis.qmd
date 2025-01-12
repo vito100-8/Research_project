@@ -203,13 +203,13 @@ NAICS2_level_summary <- joined_dataset |>
 ## Tables for each summary
 
 dataset_summary |>
-  kable("html", caption = "Global database information") |>
-  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+  kable("latex", caption = "Global database information") |>
+  kable_styling(full_width = T, latex_options = c("striped", "hover", "condensed"))
 
 
 NAICS2_level_summary |>
-  kable("html", caption = "Per NAICS 2 database information") |>
-  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+  kable("latex", caption = "Per NAICS 2 database information") |>
+  kable_styling(full_width = T, latex_options = c("striped", "hover", "condensed"))
 ```
 
 We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To enhance the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019)) but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
@@ -352,7 +352,7 @@ plot_grid(
   ncol = 3, rel_widths = c(1, 0.8, 0.3))
 ```
 
-We observe that in California, where the distribution of sectoral `Total CO2 Emissions (non_biogenic)` is less dominated by sectors 21 and 22 like in Texas, the previously observed a general increase in `avg_EarnS` level. In Texas, the second highest sector in terms of CO2 emissions (sector 22) stays relatively stable during the period. Sector 21 seems to be a diverging point in both States. In Texas, we observe an exponential increase in `Total CO2 Emissions (non_biogenic)` from sector 21 from 2018. This could be due to the implementation of new shale oil infrastructures that put Texas in the position of biggest shale oil exporter in the USA. However, average wage in the sector does not follow the trend of an exponential increase (even if it grows steadily during the period). On the contrary, `avg_EarnS` in California increases exponentially while `Total CO2 Emissions (non_biogenic)` from this sector increase more linearly.
+We observe that in California, where (as we mentioned) the distribution of sectoral `Total CO2 Emissions (non_biogenic)` is less dominated by sectors 21 and 22 like in Texas, the previously observed a general increase in `avg_EarnS` level. In Texas, the second highest sector in terms of CO2 emissions (sector 22) stays relatively stable during the period. Sector 21 seems to be a diverging point in both States. In Texas, we observe an exponential increase in `Total CO2 Emissions (non_biogenic)` from sector 21 from 2018. This could be due to the implementation of new shale oil infrastructures that put Texas in the position of biggest shale oil exporter in the USA. However, average wage in the sector does not follow the trend of an exponential increase (even if it grows steadily during the period). On the contrary, `avg_EarnS` in California increases exponentially while `Total CO2 Emissions (non_biogenic)` from this sector increase more linearly.
 
 ```{r}
 #| echo: false
@@ -417,14 +417,18 @@ Note : We chose not to use the  `facet.wrap()` command to be able to readjust to
 
 ### LMDI decomposition
 
-$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ $E = ∑_i(Q_iS_iI_i)$ $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ $\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$
+$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$  
 
-To better analyze the contributions of employment we need to analyze precisely its relationship with the Total C02 emissions. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173)) and has several possible modelizations. We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests. The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula :
+To better analyze the contributions of employment we need to analyze precisely its relationship with the Total C02 emissions. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173)) and has several possible modelizations. We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests. The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula : $E = \sum_iE_i$ 
+$\leftrightarrow  E = \sum_iQ(Q_i/Q)(E_i/Q_i)$ (by multiplicating and dividing by $Q_i$ and $Q$)  thus we obtain $E = ∑_i(Q_iS_iI_i)$
 
-As we explained in the Methodology part, we will choose an additive LMDI due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It follows the following structure of our model :
+As we explained in the Methodology part, we will choose an additive LMDI due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It has the following structure:
+$\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$ with $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ ; $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ and  $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ with $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$  defined as the logarithm mean.
+
+The analysis will be conducted from 2013 to 2023, thus we will study the long run contribution over the period. Based on the previous equations we derive the contribution of each factor depending on the sector (in total and in percentage) as well as the total variation of CO2 over the period obtained from the sum of all factor variations. 
 
 ```{r}
-# Calculate Q (Total Employment), S (Activity Share), and I (Intensity)
+# Calculating Q (Total Employment), S (Activity Share), and I (Intensity) and adding it into a dataset
 joined_dataset_preparation <- joined_dataset |> 
   group_by(year,`NAICS2  (sectors)`) |>
     mutate(Total_Emp_sector = sum(total_Emp, na.rm = TRUE)) |>
@@ -435,37 +439,42 @@ joined_dataset_preparation <- joined_dataset |>
     Intensity = `Total CO2 Emissions (non_biogenic)` / total_Emp
   )
 
-
+#we defin the years we are interested in 
 base_year <- 2013
 target_year <- 2023
 
 joined_dataset_2013 <- joined_dataset_preparation |> filter(year == base_year)
 joined_dataset_2023 <- joined_dataset_preparation |> filter(year == target_year)
 
-# Decomposition using the  framework
+# Decomposition using the  framework explained
 lmdi_results <- joined_dataset_2023 |>
+  ## performing a join to have both 2013 and 2023 values in one dataset to be able to compute the difference/evolution of variables
   left_join(joined_dataset_2013, by = "industry", suffix = c("", "_base")) |>
+  ## we filter out the sector 42 since its data don't cover the period as visible in the previous graphs
   filter(`NAICS2  (sectors)` != 42) |>
   mutate(
+    ##log mean variable 
     log_mean = if_else(
       `Total CO2 Emissions (non_biogenic)` != `Total CO2 Emissions (non_biogenic)_base`,
       (`Total CO2 Emissions (non_biogenic)` - `Total CO2 Emissions (non_biogenic)_base`) /
       (log(`Total CO2 Emissions (non_biogenic)`) - log(`Total CO2 Emissions (non_biogenic)_base`)),
       `Total CO2 Emissions (non_biogenic)`
     ),
+    ## variation of each driver (industry level)
     Delta_Activity = log_mean * log(Total_Emp_sector / Total_Emp_sector_base),
     Delta_Share = log_mean * log(Activity_Share / Activity_Share_base),
     Delta_Intensity = log_mean * log(Intensity / Intensity_base)
   ) |>
   group_by(`NAICS2  (sectors)`) |>
   summarize(
+    ##computing the contribution of each driver (sector level)
     Total_CO2_var = sum(Delta_Activity + Delta_Share + Delta_Intensity, na.rm = TRUE),
     Contribution_Activity = sum(Delta_Activity, na.rm = TRUE),
     Contribution_Share = sum(Delta_Share, na.rm = TRUE),
     Contribution_Intensity = sum(Delta_Intensity, na.rm = TRUE),
     .groups = "drop"
   )
-
+#Adding contribution in percentage of CO2 total variations (allowing for negative contributions and  values>100%)
 contribution_summary_table <- lmdi_results |>
   group_by(`NAICS2  (sectors)`) |>
   mutate(
@@ -487,28 +496,37 @@ contribution_summary_table |>
     "Intensity contribution (in %)" = I_Percentage,
     .keep = "none"
   ) |>
-  kable("html", caption = "Contribution of each factor") |>
-  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
+  kable("latex", caption = "Contribution of each factor") |>
+  kable_styling(full_width = T, latex_options = c("striped", "hover", "condensed"))
 
 ```
+Firstly, we observe the difference in variations among sectors which correlates with the magnitude of each sector and the CO2 emissions associated. A huge sector in terms of emission (e.g. 21) provokes more CO2 variations across time but encompasses, as we’ve seen, more firms. As we are more interested in relative contribution, those values only provide information on the magnitude of the variation without giving a clear view of their drivers. Nonetheless we observe the trend for CO2 emissions of each sector and still find the huge positive variations for sectors such as 21 and 32 similar to the hikes described in the graphical representations.
+
+
+Then, if we analyse the contribution in percentage (columns 6-8) we can observe the relative importance of a factor on CO2 emissions in a specific sector between 2013 and 2023. The sum of the three drivers sums up to 100% but there is, at this point, no normalization on the values; thus, we can observe  contributions of more than 100% if the variations of a factor is higher than the ones related to CO2 emissions. An interesting finding is the extremely high values for some sectors such as 22 (Utilities) which encompass for example electric power generation and natural gas distribution. For this case we observe that the Intensity factor has a great positive contribution in the variation (1141%) suggesting that the increase in carbon intensity of this sector was large but covered by the decreasing activity and the shrinking  relative part of the industry in the total sector.
+
+Overall the Intensity factor has a positive coefficient, underlining the fact that increased carbon-intense activities per industry produces more C02 emissions. The other two contributions are less straightforward since Activity is theoretically a positive driver of emissions since an increased workforce size in the sector should translate into more production and, thus, more emissions. Hence, its negative coefficients in 8 sectors, and of great magnitude in sectors 54, 48 and 22, seems surprising. Possible explanation lies in investment on infrastructures between 2013 and 2023. For example, the Texan power plants associated with the Utilities sector may have increased their technology and their energy mix resulting in lower emissions even though their output is increasing. Another one is the close-to-zero emission values of  small sectors that provoke a more imprecise contribution analysis (as an outlier). In this case the sector 54 that represents 0.0008% of total emissions seems to embody this aspect. Finally, the structure appears to also have 8 negative coefficients, meaning that the increase of a firm in its sector would decrease its emission. This result is quite surprising because we expect the opposite, as in sector 21 with increased relative share of the industry linked to higher emissions. Investment in cleaner plants and adoption of greener technologies could be a solution, since an increased share often translates into more budget available for innovation.
+
 
 ```{r}
-# Graphical representation updated with A (Activity), S (Structure), and I (Intensity)
+# Graphical representation that uses normalized data (contribution between 0-100%)
 normalized_data <- contribution_summary_table |>
   mutate(
+    ##taking absolute value to have relative normalized contribution
     Total_Abs_Contrib = abs(A_Percentage) + abs(S_Percentage) + abs(I_Percentage),
     Activity_Percentage_Norm = abs(A_Percentage) / Total_Abs_Contrib * 100,
     Structure_Percentage_Norm = abs(S_Percentage) / Total_Abs_Contrib * 100,
     Intensity_Percentage_Norm = abs(I_Percentage) / Total_Abs_Contrib * 100
   ) |>
   select(`NAICS2  (sectors)`, Activity_Percentage_Norm, Structure_Percentage_Norm, Intensity_Percentage_Norm) |>
+  ##reshaping to have an appropriate graphical format with the contributive variables as "Factor"
   pivot_longer(
     cols = c(Activity_Percentage_Norm, Structure_Percentage_Norm, Intensity_Percentage_Norm),
     names_to = "Factor",
     values_to = "Normalized_Percentage_Contribution"
   )
 
-# Updated bar chart
+# ploting the values with bar filled (0-100%) to see the relative contribution of each factor for each sector (absolute values)
 normalized_data |> 
   ggplot(aes(x = `NAICS2  (sectors)`, y = Normalized_Percentage_Contribution, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
@@ -523,13 +541,16 @@ normalized_data |>
 
 ```
 
+For a clearer analysis, we normalize the contribution to see the relative contribution of each driver (in percentage) on emissions. We observe that the intensity factor plays a greater role overall, underlining the fact that carbon efficiency  (here emissions divided by  the workforce size of the industry) is crucial for energy-producing firms.
+
 ```{r}
-# Summarizing average contributions across all sectors and years
+# Summarizing average contributions across all sectors between the years
 relative_contrib_between_var <- normalized_data |>
   group_by(Factor) |> 
+  ## It is important to note that the choice made is to take the mean of all normalized contributions meaning that if a variable explains a lot of a small industry's variations in emissions its relative importance will be higher than a variable explaining only a bit of a huge industry with enormous variations.
   summarize(Average_Percentage_Contribution = mean(Normalized_Percentage_Contribution, na.rm = TRUE))
 
-# Rename factors for better readability
+# Renaming factors to be clearer
 relative_contrib_between_var <- relative_contrib_between_var |> 
   mutate(Factor = case_when(
     Factor == "Activity_Percentage_Norm" ~ "Activity (A)",
@@ -537,7 +558,8 @@ relative_contrib_between_var <- relative_contrib_between_var |>
     Factor == "Intensity_Percentage_Norm" ~ "Intensity (I)",
   ))
 
-# Horizontal bar chart that describes the relative importance of each factor between them
+# Horizontal bar chart to see the relative importance of factors
+
 ggplot(relative_contrib_between_var, aes(x = Average_Percentage_Contribution, y = reorder(Factor, Average_Percentage_Contribution), fill = Factor)) +
   geom_bar(stat = "identity") +
   labs(
@@ -548,6 +570,11 @@ ggplot(relative_contrib_between_var, aes(x = Average_Percentage_Contribution, y 
   )
 
 ```
+
+The latter observation is confirmed by this chart since it shows that the relative importance of Intensity is higher than the importance of the other factors combined. Particularly we observe that the share of the industry is the least important factor, meaning that the sector share of an industry is not the main driver of carbon emissions.
+
+As we’ve seen sectors 21 and 22 represent  98% of total emissions, we will perform a LMDI decomposition on these sectors and separate the State to better analyze them according to their location. The first chart will be in values to display the difference of magnitude between them and the second in relative contribution
+
 
 ```{r}
 
@@ -611,6 +638,14 @@ ggplot(state_contributions, aes(x = `NAICS2  (sectors)`, y = Contribution, fill 
   ) +
   theme_minimal()
 
+
+
+```
+
+We firstly notice the difference of contribution depending on the State : it emphasizes the importance of Texas in emissions, especially compared to California.
+It then  appears that the majority of the emission’s increases in Texas is linked to Intensity. It reveals that the hike we previously mentioned is probably due to a worse energy mix and technology of production, the fracking which increased between the two periods is an example of such worsening.
+
+```{r}
 # Step 3b: Normalize contributions for percentage analysis
 state_relative <- state_sector_lmdi |>
   mutate(
@@ -636,8 +671,11 @@ ggplot(state_relative, aes(x = `NAICS2  (sectors)`, y = Percentage, fill = Facto
     fill = "Factor"
   ) +
   theme_minimal()
-
 ```
+
+
+The relative contribution also displays the greater role of Intensity for each sector, except for the 21 sectors in California where the structure has a higher contribution. Perhaps, it comes from the fact that California implemented environmental measures, for example the Cap-and-Trade studied in the next part, in the time period, thus resulting in significant share changes between the industries depending on their reactions and energetic mix. Activity maintains a contribution around 10% for each sector denoting a relative quasi-stability of its effect on those industries (although the opposite reaction of each industry's emissions to the factor).
+
 
 ## Model Fitting
 
@@ -754,3 +792,5 @@ Compared to the previous model, the residual standard error has decreased to 2.0
 
 
 ## Conclusion
+
+In this work we studied the CO2 emissions of energy-producing firms in California and Texas and found that, according to the EIA's terminology and its data, Texas' firms emit, on average, a lot more than their Californian counterparts. This is particularly true for the Mining, Quarrying, and Oil and Gas Extraction (21) and Utilities (22) sectors that amount for nearly all emissions across our dataset. 

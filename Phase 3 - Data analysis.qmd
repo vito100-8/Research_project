@@ -28,9 +28,19 @@ library(ggplot2)
 library(broom)
 
 ## Regression
-library(fixest)
+library(stargazer)
 library(modelsummary)
 library(lmtest)
+library(lfe)
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# Adding the final dataset
+joined_dataset <- readRDS("joined_dataset.rds")
 ```
 
 ## Methodology
@@ -133,7 +143,7 @@ Additionnally, we will create a dummy to separate our analysis such that :
 
 -   `State` is divided in two (California and Texas)
 
--   A policy dummy was added to study the impact of new regulations aimed at reducing emissions. 
+-   A policy dummy was added to study the impact of new regulations aimed at reducing emissions.
 
 We will study the heterogeneity of response depending on the industry.
 
@@ -148,6 +158,8 @@ The following tables provide an overview of the final joined dataset (Table 1) a
 ```{r}
 #| echo: false
 #| message: false
+
+joined_dataset <- joined_dataset
 
 # Summary table for our joined dataset
 dataset_summary <- joined_dataset |>
@@ -281,11 +293,11 @@ plot_grid(
   ncol = 3, rel_widths = c(1, 0.8, 0.3))
 ```
 
-First, we observe a relatively high dispersion of monthly average wages across sectors. In 2013, `avg_EarnS` ranged from around 3500 to 7500 dollars and in 2023, if we exclude some big outliers, the range was 5000 - 10000$.  It seems that from 2013 to 2023, the lower wages increased by approximately 40% during the time period, while the highest wages increased by a third. On the other hand, Total Employment stayed relatively stable in most sectors (especially in smaller sectors), with an overall increase in 10 years. Most sectors experienced job contractions during the Covid-period, starting with sector 72 (Accommodation & Food Services). We can observe that sector 21 (Mining, Quarrying & Oil & Gas Extraction) experienced massive lay-offs in 2015 and 2016, probably due to the sharp decline in oil-prices during the mid-2014s, which impacted especially shale oil companies in Texas. This could also have impacted the Manufacturing sector 33 (also shown in the decline during this period). 
+First, we observe a relatively high dispersion of monthly average wages across sectors. In 2013, `avg_EarnS` ranged from around 3500 to 7500 dollars and in 2023, if we exclude some big outliers, the range was 5000 - 10000\$. It seems that from 2013 to 2023, the lower wages increased by approximately 40% during the time period, while the highest wages increased by a third. On the other hand, Total Employment stayed relatively stable in most sectors (especially in smaller sectors), with an overall increase in 10 years. Most sectors experienced job contractions during the Covid-period, starting with sector 72 (Accommodation & Food Services). We can observe that sector 21 (Mining, Quarrying & Oil & Gas Extraction) experienced massive lay-offs in 2015 and 2016, probably due to the sharp decline in oil-prices during the mid-2014s, which impacted especially shale oil companies in Texas. This could also have impacted the Manufacturing sector 33 (also shown in the decline during this period).
 
-Note : Even if the dataset comprises energy-related facilities, those categorized under other NAICS sectors, such as sector 62 or 72 likely involve other activities as part of or adjacent to the energy infrastructure. 
+Note : Even if the dataset comprises energy-related facilities, those categorized under other NAICS sectors, such as sector 62 or 72 likely involve other activities as part of or adjacent to the energy infrastructure.
 
-The second and third graph show, respectively, the evolution of `avg_EarnS` and CO2 Emissions and the evolution of `total_Emp` and CO2 Emissions, both at a sectoral level and by State. 
+The second and third graph show, respectively, the evolution of `avg_EarnS` and CO2 Emissions and the evolution of `total_Emp` and CO2 Emissions, both at a sectoral level and by State.
 
 ```{r}
 #| echo: false
@@ -411,9 +423,9 @@ plot_grid(
   ncol = 3, rel_widths = c(1, 0.8, 0.3))
 ```
 
-The `total_Emp` variable seems to be more heterogeneous across sectors as well as across States. As we saw before, the sector dominating in terms of CO2 emissions (sector 21) experienced a sharp decline of employment from 2015 onwards, but continued to increase considerably in terms of `Total CO2 Emissions (non_biogenic)` in Texas. While in Texas, sector 21 seems to be the biggest sector in terms of employment, it is situated in California as one of the smallest. On the contrary, the `total_Emp` in sector 92 in California decreased considerably from 2019, as well as `Total CO2 Emissions (non_biogenic)` in the sector, which was not the case in Texas, where total employment grew steadily.  In general, `total_Emp` seems to have stayed relatively constant during the time period, even if `Total CO2 Emissions (non_biogenic)` generally increased (exponentially in Texas).
+The `total_Emp` variable seems to be more heterogeneous across sectors as well as across States. As we saw before, the sector dominating in terms of CO2 emissions (sector 21) experienced a sharp decline of employment from 2015 onwards, but continued to increase considerably in terms of `Total CO2 Emissions (non_biogenic)` in Texas. While in Texas, sector 21 seems to be the biggest sector in terms of employment, it is situated in California as one of the smallest. On the contrary, the `total_Emp` in sector 92 in California decreased considerably from 2019, as well as `Total CO2 Emissions (non_biogenic)` in the sector, which was not the case in Texas, where total employment grew steadily. In general, `total_Emp` seems to have stayed relatively constant during the time period, even if `Total CO2 Emissions (non_biogenic)` generally increased (exponentially in Texas).
 
-Note : We chose not to use the  `facet.wrap()` command to be able to readjust to scaling between the chosen workforce variable and `Total CO2 Emissions (non_biogenic)` for better visualization. 
+Note : We chose not to use the `facet.wrap()` command to be able to readjust to scaling between the chosen workforce variable and `Total CO2 Emissions (non_biogenic)` for better visualization.
 
 ### LMDI decomposition
 
@@ -650,8 +662,10 @@ To identify if the program significantly affects the CO2 Emissions of industries
 Therefore, we establish a relationship between our workforce characteristics, Average Monthly Wage and Total Employment and CO2 Emissions by NAICS 4 sectors (i.e. at industry level) in California and Texas according to the following equation :
 
 $$
-log(CO2 emissions) = \beta_0 + log(Average Monthly Wage)\beta_1 + log(Total Employment)\beta_2 + \epsilon
-$$ where CO2 Emissions corresponds to the logarithm of total CO2 Emissions (in unit metric tons) of one industry (NAICS4 level of aggregation); ln earn corresponds to the logarithm of average Monthly wage in one industry; ln emp corresponds to the logarithm of the total number of employees in one industry.
+log(CO_2 \space emissions) = \beta_0 + log(Average \space Monthly \space Wage)\beta_1 + log(Total \space Employment)\beta_2 + \epsilon
+$$
+
+where CO2 Emissions corresponds to the logarithm of total CO2 Emissions (in unit metric tons) of one industry (NAICS4 level of aggregation); ln earn corresponds to the logarithm of average Monthly wage in one industry; ln emp corresponds to the logarithm of the total number of employees in one industry.
 
 We choose to use a log-log regression model to linearize a possibly non-linear relationship between our variables. Additionally, our dataset shows a high amount of extreme outliers,conducting to a highly skewed distribution. Log transformation makes the distribution of the dependent or independent variable closer to normal. To be able to use a log-log model, we deleted 9 observations (3 for CO2 Emissions and 6 for Total Employment).
 
@@ -660,6 +674,7 @@ Using the Ordinary Least Squares method, we obtain the following results :
 ```{r}
 #| echo: false
 #| message: false
+#| warning: false
 
 ## Defining logarithmic variables to rationalize outliers/zero values 
 dataset_for_ols <- joined_dataset |> 
@@ -671,7 +686,9 @@ dataset_for_ols <- joined_dataset |>
 base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
 
 ## Summary of the OLS results
-summary(base_ols_model)
+stargazer(base_ols_model, type = "latex",
+          title = "Base Model Regression Results",
+          out = "base_regression_results.tex")
 ```
 
 We observe that the variable `ln earn` is positive and highly significant with a p-value of less than 2e-16. That means that all else equal, a 1% increase in average monthly wage is associated with an approximately 3.04 % increase in CO2 emissions. On the other hand, `ln emp` is not statistically significant and is positively correlated with CO2 emissions : all else equal, a 1% increase of Total Employment in an industry is associated with a 0,06% increase of CO2 Emissions in that industry. These results partially contradict our initial hypothesis. On one hand, the higher the wage, the higher the CO2 emissions in an industry. If this result does not condone the concept of “green jobs”, it aligns with the IEA’s report, according to which higher-emitting industries, like oil extraction, pay higher wages to employees than more volatile industries. On the other hand, the more employees there are, the higher the emissions (even if not significantly). This confirms the idea that employment size works as a proxy for industry size. The bigger the industry, the more it should emit.
@@ -685,7 +702,7 @@ To model the effect of the program, we created a dummy corresponding to the regu
 Completing the previous model, we now have the following equation :
 
 $$
-log(CO2 emissions) = \beta_0 + log(Average Monthly Wage)\beta_1 + log(Total Employment)\beta_2 + Policy\beta_3 + \epsilon
+log(CO_2 \space emissions) = \beta_0 + log(Average \space Monthly \space Wage)\beta_1 + log(Total \space Employment)\beta_2 + Policy\beta_3 + \epsilon
 $$
 
 Applying OLS, we now have the following results :
@@ -693,6 +710,7 @@ Applying OLS, we now have the following results :
 ```{r}
 #| echo: false
 #| message: false
+#| warning: false
 
 ## Defining a dummy variable for State, which takes the value 1 for Texas and 0 for California
 dataset_for_ols <-
@@ -701,7 +719,10 @@ dataset_for_ols <-
 
 extend_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp` + state_dummy, data = dataset_for_ols)
 
-summary(extend_ols_model)
+# Summary of the OLS results
+stargazer(extend_ols_model, type = "latex",
+          title = "Dummy Model Regression Results",
+          out = "dummy_regression_results.tex")
 ```
 
 As in the previous results, we still have a positive and highly significant correlation between average monthly wage and CO2 emissions per industry : A 1% increase in average wages is associated with approximately a 3.16% increase in CO2 emissions, keeping all other variables constant. On the contrary ln emp is still not statistically significant (p-value = 0.134) and is still positive. Finally, the dummy `Environment` proves to be highly significant (p-value \< 0.01) and positive. We could infer that firms in California after the introduction of the cap-and-trade program in 2015 emit approximately 90% less CO2 than firms in Texas during the same period, controlling for wages and employment. This result confirms our main hypothesis : The cap-and-trade program has a significant effect on the emissions of industries in our dataset.
@@ -712,7 +733,12 @@ Additionally, the Adjusted R² is 0.1994, slightly higher than the previous mode
 
 ### Testing the model
 
+The results of the regression question the conformity to the model’s initial assumptions, especially in terms of normality of residuals, i.e. symmetrical distribution of residuals around 0 and homoscedasticity, i.e. constant variance among the residuals of the regression.
+
 ```{r}
+#| echo: false
+#| message: false
+#| warning: false
 
 # Testing model assumptions
 
@@ -721,36 +747,41 @@ par(mfrow = c(2, 2)) ### setting up layout
 plot(extend_ols_model)
 
 ## Homoscedasticity
-bptest(extend_ols_model)
+stargazer(bptest(extend_ols_model), type = "latex",
+          title = "Breusch-Pagan test results",
+          out = "bp_test_results.tex")
 ```
 
-The results of the regression question the conformity to the model’s initial assumptions, especially in terms of normality of residuals, i.e. symmetrical distribution of residuals around 0 and homoscedasticity, i.e. constant variance among the residuals of the regression. 
- 
 We can assess normality of residuals by first plotting the residuals in a Q-Q plot. We observe that while the residuals follow the diagonal line in general, the points deviate significantly in the tails.This implies that the residuals are not normally distributed. Secondly, the Residuals vs. Fitted plot reveals that the residuals of the regression are not randomly scattered, as they should be in the absence of heteroscedasticity. On the contrary, the residuals seem to follow a decreasing funnel shape, which suggests non-constant variance of the residuals i.e. presence of heteroscedasticity. This result is further confirmed after implementing a Breusch-Pagan test of heteroscedasticity : the p-value < 2.2e-16 confirms the presence of strong heteroscedasticity which we will proceed to correct in the next section.
-
-
 
 ### Introducing fixed effects
 
-The conclusions of the previous tests lead us to consider that heterogeneity in the relationship between our dependent variable and independent variables may bias our results. The graphical analysis effectuated in the first part of the paper showed heterogeneity of workforce characteristics at a sectoral level (NAICS 2 level of aggregation). To confirm this hypothesis, we introduce a fixed-effect model following this equation : 
+The conclusions of the previous tests lead us to consider that heterogeneity in the relationship between our dependent variable and independent variables may bias our results. The graphical analysis effectuated in the first part of the paper showed heterogeneity of workforce characteristics at a sectoral level (NAICS 2 level of aggregation). To confirm this hypothesis, we introduce a fixed-effect model following this equation :
 
-log(CO2 emissions) = log(Average Monthly Wage) + log(Total Employment) + Environment | NAICS 2 sectors
+$$
+log(CO_2 \space emissions) = \beta_0 + log(Average \space Monthly \space Wage)\beta_1 + log(Total \space Employment)\beta_2 + Policy\beta_3 \space\|\space NAICS 2 \space sectors + \epsilon
+$$
 
 where NAICS 2 sector corresponds to sectoral fixed effect i.e.controlling for unobserved heterogeneity across sectors. Additionally, we will implement robust standard errors to correct further our heteroscedasticity and normality issues.
 
-Applying a fixed-effect OLS with robust standard errors, using the `fixest` package, we now have the following final result : 
+Applying a fixed-effect OLS using the `lfe` package, we now have the following final result :
 
 ```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
 ## Introducing fixed effect year
 fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln earn` + `ln emp` + state_dummy | `NAICS2  (sectors)`, data = dataset_for_ols)
 
-## Summary of fixed-effect model with robust standard errors
-summary(fe_ols_model, vcov = "HC1")
+## Summary of fixed-effect model
+stargazer(fe_ols_model, type = "latex",
+          title = "Fixed-Effects Model Regression Results",
+          out = "fe_regression_results.tex") 
 ```
 
 The `ln earn` variable remains highly significant and positively correlated with CO2 emissions, just like in the previous results. The high similarity between the coefficients in all three models implies that wage does not correlate that differently with CO2 emissions across sectors. Similarly, the Environment dummy keeps its negative sign (-0.94) and gains significance (p = 9.22e-11). After controlling for sectoral fixed effects, firms in California, since the Cap-and-Trade program, emit approximately 94% less CO2 than similar firms in Texas or California pre-2015, thus corresponding to our previous result. Finally, the variable `ln emp` is now negatively correlated with CO2 emissions of industries (-0.004), but still not statistically significant (p = 0.942). The negative sign could be due to the fact that high-emitting industries (like fuel suppliers) may be more capital-intensive than labor intensive. Sectoral differences could have been masking the true effect of employment size on CO2 emissions of industries. We could indeed infer from the result that labor-intensive industries, i.e. that have more employees emit less than capital-intensive industries. However, this hypothesis should be relativized as the variable is even less significant than before.
 
-Compared to the previous model, the residual standard error has decreased to 2.085 (from a previous 2.314), which indicates improved fit. The Adjusted R² is now 0.3497, which is much higher than in the previous models (lower than 20%).  The fixed effects improve the explanatory power of the model, also highlighted by a high F-statistic (72.33). Overall, the fixed-effects model seems to provide more reliable results compared to the earlier models.
-
+Compared to the previous model, the residual standard error has decreased to 2.085 (from a previous 2.314), which indicates improved fit. The Adjusted R² is now 0.3497, which is much higher than in the previous models (lower than 20%). The fixed effects improve the explanatory power of the model, also highlighted by a high F-statistic (72.33). Overall, the fixed-effects model seems to provide more reliable results compared to the earlier models.
 
 ## Conclusion

@@ -122,11 +122,11 @@ Energy-producing firms can be divided in three groups :
 
 Independent variables
 
-There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `avg_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
+There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `total_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
 
 We chose to use `avg_EarnS` as a proxy for workforce skill level and investment in human capital. The idea behind this is that "greener jobs" (so here represented by jobs associated with firms emitting relatively low levels of C02) tends to hire more skilled workers (see [Bowen et al., 2018](https://www.sciencedirect.com/science/article/pii/S0140988318300963), [Elliott and Lindley (2017)](https://www.sciencedirect.com/science/article/abs/pii/S0921800916311442)) with higher wages associated. Therefore, we expect a negative relationship between wage and CO2 emissions.
 
-Another key variable is Net employment change (`avg_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
+Another key variable is Net employment change (`total_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
 
 Additionnally, we create dummies to separate our analysis in groups :
 
@@ -236,14 +236,14 @@ graph_emp1 <- joined_dataset |>
             .groups = "drop") |>
   ggplot(aes(x = year)) +
   ## Plotting a line graph for Total Employment and rescaling it for better visualization (dividing by 10)
-  geom_line(aes(y = total_emp_sector/10, colour = `NAICS2  (sectors)`)) +
-  geom_point(aes(y = total_emp_sector/10, colour = `NAICS2  (sectors)`), size = 1) +
+  geom_line(aes(y = total_emp_sector/5, colour = `NAICS2  (sectors)`)) +
+  geom_point(aes(y = total_emp_sector/5, colour = `NAICS2  (sectors)`), size = 1) +
   ## Plotting a barplot for Net EMployment Change
   geom_col(aes(y = total_emp_change_sector, fill = `NAICS2  (sectors)`), alpha = 0.3) +
   ## Renaming the primary axis 
   scale_y_continuous(name = "Net Employment Change by Sector",
                      ## Creating a secondary axis for Total Employment, converting back its scale to correctly show the values (multiplying by 10)
-                     sec.axis = sec_axis(~ . *10, name = "Total Employment")) +
+                     sec.axis = sec_axis(~ .*5, name = "Total Employment")) +
   labs(title = "Evolution of Total Employment by Sector",
        x = "Year") +
   ## Background without grid or annotations
@@ -301,14 +301,14 @@ graph_CA_wage <- joined_dataset |>
     avg_wage_sector = mean(avg_EarnS, na.rm = TRUE), .groups = "drop") |>
   ggplot(aes(x = year)) + 
   ## Plotting a bar plot for CO2 Emissions per firm and rescaling it for better visualization (dividing by 1000)
-  geom_col(aes(y = co2_per_firm / 1000, fill = `NAICS2  (sectors)`), alpha = 0.5) +
+  geom_col(aes(y = co2_per_firm / 500, fill = `NAICS2  (sectors)`), alpha = 0.5) +
   ## Plotting a line graph for Average Wage by Sector
   geom_line(aes(y = avg_wage_sector, color = `NAICS2  (sectors)`)) +
    geom_point(aes(y = avg_wage_sector, colour = `NAICS2  (sectors)`), size = 1) +
   scale_y_continuous(
     name = "Average Monthly Wage",
     ## Creating a secondary axis for CO2 Emissions per firm, converting back its scale to correctly show the values (multiplying by 1000)
-    sec.axis = sec_axis(~ . * 1000, name = "Average CO2 Emissions per Firm")) +
+    sec.axis = sec_axis(~ . * 500, name = "Average CO2 Emissions per Firm")) +
   labs(
     title = "California's CO2 Emissions & Average Wage",
     x = "Year"
@@ -325,12 +325,12 @@ graph_TX_wage <- joined_dataset |>
     co2_per_firm = sum(`Total CO2 Emissions (non_biogenic)`) / sum(`Number of firms`),
     avg_wage_sector = mean(avg_EarnS, na.rm = TRUE), .groups = "drop") |>
   ggplot(aes(x = year)) + 
-  geom_col(aes(y = co2_per_firm / 50000, fill = `NAICS2  (sectors)`), alpha = 0.5) +
+  geom_col(aes(y = co2_per_firm / 25000, fill = `NAICS2  (sectors)`), alpha = 0.5) +
   geom_line(aes(y = avg_wage_sector, color = `NAICS2  (sectors)`)) +
    geom_point(aes(y = avg_wage_sector, colour = `NAICS2  (sectors)`), size = 1) +
   scale_y_continuous(
     name = "Average Monthly Wage",
-    sec.axis = sec_axis(~ . * 50000, name = "Average CO2 Emissions per Firm")) +
+    sec.axis = sec_axis(~ . * 25000, name = "Average CO2 Emissions per Firm")) +
   labs(
     title = "Texas' CO2 Emissions & Average Wage",
     x = "Year"
@@ -407,8 +407,8 @@ plot_grid(
 
 ### LMDI decomposition
 
-$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ $E = ∑_i(Q_iS_iI_i)$ $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ $\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$
 
+$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ $E = ∑_i(Q_iS_iI_i)$ $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ $\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$
 
 
 To better analyze the contributions of employment we need to analyze precisely its relationship with the Total C02 emissions. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z ) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173 )) and has several possible modelizations. 
@@ -486,7 +486,6 @@ contribution_summary_table |>
   kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
 
 ```
-
 
 
 ```{r}
@@ -638,7 +637,23 @@ ggplot(state_relative, aes(x = `NAICS2  (sectors)`, y = Percentage, fill = Facto
 
 ## Model Fitting
 
+In the second part of the analysis, we want to analyse the effect of the Cap-and-Trade program put in place in California since 2015 and which is enforced by the California Air Resources Board (CARB). It is a market-based system which sets a cap (a limit) to the number of greenhouse gas emissions released by facilities during a period. Within this cap, emission allowances are distributed by a mix of free allocation and quarterly auctions, which can be traded by facilities within the cap. Since 2015, the cap-and-trade rules apply to electric power plants, industrial plants and fuel distributors that emit 25,000 tons of carbon dioxide equivalent per year or more.
+
 ### Base Model
+
+To identify if the program significantly affects the CO2 Emissions of industries in these States, we use a base regression model without taking into account the effect of this policy.
+
+Therefore, we establish a relationship between our workforce characteristics, Average Monthly Wage and Total Employment and CO2 Emissions by NAICS 4 sectors (i.e. at industry level) in California and Texas according to the following equation :
+
+$$
+log(CO2 emissions) = \beta_0 + log(Average Monthly Wage)\beta_1 + log(Total Employment)\beta_2 + \epsilon
+$$
+where CO2 Emissions corresponds to the logarithm of total CO2 Emissions (in unit metric tons) of one industry (NAICS4 level of aggregation); ln earn corresponds to the logarithm of average Monthly wage in one industry; ln emp corresponds to the logarithm of the total number of employees in one industry.
+
+We choose to use a log-log regression model to linearize a possibly non-linear relationship between our variables. Additionally, our dataset shows a high amount of extreme outliers,conducting to a highly skewed distribution. Log transformation makes the distribution of the dependent or independent variable closer to normal. To be able to use a log-log model, we deleted 9 observations (3 for CO2 Emissions and 6 for Total Employment).
+
+
+Using the Ordinary Least Squares method, we obtain the following results :
 
 ```{r}
 #| echo: false
@@ -646,18 +661,34 @@ ggplot(state_relative, aes(x = `NAICS2  (sectors)`, y = Percentage, fill = Facto
 
 ## Defining logarithmic variables to rationalize outliers/zero values 
 dataset_for_ols <- joined_dataset |> 
-  filter(`NAICS2  (sectors)` == 21) |> 
-  rename ( `Total CO2 Emissions (non_biogenic) test` =  `Total CO2 Emissions (non_biogenic)`) |>
-  mutate(`ln Total CO2 Emissions test` = log(`Total CO2 Emissions (non_biogenic) test`), `ln emp` = log(total_Emp), `ln earn` = log(avg_EarnS))
+  filter(`Total CO2 Emissions (non_biogenic)` > 0 & total_Emp > 0) |>
+  mutate(`ln Total CO2 Emissions` = log(`Total CO2 Emissions (non_biogenic)`), `ln emp` = log(total_Emp), `ln earn` = log(avg_EarnS))
+
 
 ## Running the base regression
-base_ols_model <- lm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
+base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
 
 ## Summary of the OLS results
 summary(base_ols_model)
 ```
 
+
+We observe that the variable `ln earn` is positive and highly significant with a p-value of less than 2e-16. That means that all else equal, a 1% increase in average monthly wage is associated with an approximately 3.04 % increase in CO2 emissions. On the other hand, `ln emp` is not statistically significant and is positively correlated with CO2 emissions : all else equal, a 1% increase of Total Employment in an industry is associated with a 0,06% increase  of CO2 Emissions in that industry. These results partially contradict our initial hypothesis. On one hand, the higher the wage, the higher the CO2 emissions in an industry. If this result does not condone the concept of “green jobs”, it aligns with the IEA’s report, according to which higher-emitting industries, like oil extraction, pay higher wages to employees than more volatile industries. On the other hand, the more employees there are, the higher the emissions (even if not significantly). This confirms the idea that employment size works as a proxy for industry size. The bigger the industry, the more it should emit.
+
+The R² and Adjusted R² are both  0.17, which means that approximately 17% of the changes in CO2 emissions can be explained by variations of workforce characteristics. This relatively low value indicated probable OVB, as we did not include traditional explanatory variables in our model, such as energy consumption for example. Nonetheless, we have an F-statistic of 106.4 (p-value < 2.2e-16), which indicates overall, our model is statistically significant.
+
+
 ### Extended model with dummy variable
+
+To model the effect of the program, we created a dummy corresponding to the regulatory environment in which a particular observation is situated. The dummy `Policy` will take the value 1 when the observation is located in California, post-2015 and 0 otherwise.
+
+Completing the previous model, we now have the following equation :
+
+$$
+log(CO2 emissions) = \beta_0 + log(Average Monthly Wage)\beta_1 + log(Total Employment)\beta_2 + Policy\beta_3 + \epsilon
+$$
+
+Applying OLS, we now have the following results : 
 
 ```{r}
 #| echo: false
@@ -666,15 +697,16 @@ summary(base_ols_model)
 ## Defining a dummy variable for State, which takes the value 1 for Texas and 0 for California
 dataset_for_ols <-
   dataset_for_ols |>
-  mutate(state_dummy = if_else(State == "TX", 1, 0))
+  mutate(state_dummy = if_else(State == "CA" & year > 2015, 1, 0))
 
-extend_ols_model <- lm(`ln Total CO2 Emissions test` ~  `ln earn` + `ln emp` + state_dummy, data = dataset_for_ols)
+extend_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp` + state_dummy, data = dataset_for_ols)
 
 summary(extend_ols_model)
-
-par(mfrow = c(2, 2)) ### setting up layout
-plot(extend_ols_model)
 ```
+
+As in the previous results, we still have a positive and highly significant correlation between average monthly wage and CO2 emissions per industry : A 1% increase in average wages is associated with approximately a 3.16% increase in CO2 emissions, keeping all other variables constant. On the contrary ln emp is still not statistically significant (p-value = 0.134) and is still positive. Finally, the dummy `Environment` proves to be highly significant (p-value < 0.01) and positive. We could infer that firms in California after the introduction of the cap-and-trade program in 2015 emit approximately 90% less CO2 than firms in Texas during the same period, controlling for wages and employment. This result confirms our main hypothesis : The cap-and-trade program has a significant effect on the emissions of industries in our dataset.
+
+Additionally, the Adjusted R² is 0.1994, slightly higher than the previous model (0.1784), which shows in theory that including the Environment dummy improves our model.
 
 ## Model Extension and Fixed Effects
 
@@ -696,10 +728,10 @@ bptest(extend_ols_model)
 
 ```{r}
 ## Introducing fixed effect year
-fe_ols_model <- feols(log(`Total CO2 Emissions (non_biogenic) test`) ~  `ln earn` + `ln emp` + state_dummy | year, data = dataset_for_ols)
+fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln earn` + `ln emp` + state_dummy | `NAICS2  (sectors)`, data = dataset_for_ols)
 
 ## Summary of fixed-effect model with robust standard errors
-summary(fe_ols_model, vcov = "hetero")
+summary(fe_ols_model, vcov = "HC1")
 ```
 
 ## Conclusion

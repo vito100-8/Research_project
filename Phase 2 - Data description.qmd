@@ -360,7 +360,7 @@ join_wf_data <- join_wf_data |>
 #Thus we group by industry and year (the level of detail wanted for our later join)
 
 join_wf_data <- join_wf_data |>
-  group_by(industry, year) %>%
+  group_by(industry, year, State) %>%
   summarize(
     avg_EarnS = mean(avg_EarnS, na.rm = TRUE),
     total_Emp = sum(avg_Emp, na.rm = TRUE),

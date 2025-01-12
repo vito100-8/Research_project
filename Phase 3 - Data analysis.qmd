@@ -37,18 +37,15 @@ library(lmtest)
 
 How do workforce characteristics, including wage levels, employment size, and net employment change, contribute to variations in CO2 emissions in energy-producing industries over time?
 
-In the first part of our analysis, we will focus on establishing a non-causal relationship between CO2 emissions, and industry characteristics (monthly average wage, industry size and net industry size change) using the Logarithmic Mean Divisia Index (LMDI) decomposition method to identify the contribution of different industry characteristics to changes in CO2 emissions. 
+In the first part of our analysis, we will focus on establishing a non-causal relationship between CO2 emissions, and industry characteristics (monthly average wage, industry size and net industry size change) using the Logarithmic Mean Divisia Index (LMDI) decomposition method to identify the contribution of different industry characteristics to changes in CO2 emissions.
 
-The Logarithmic Mean Divisia Index is an analytical method that breaks down aggregate changes in a variable into several effects to identify the main drivers behind the changes in the variable of interest. Using the logarithmic mean, it allows for consistent results in the presence of zero or missing values. 
-THe LMDI can be applied in an additive or a multiplicative method : 
-The additive method consists in representing the absolute effect of a factor to the changes in the variable of interest. The total change in the variable of interest is expressed as the sum of the contributions of all the factors taken into account. 
-The multiplicative method corresponds to computing the relative contribution of each factor to the changes in the variable of interest (expressed in general in percentages). Then, the variable of interest is expressed as a product of the relative contributions of each variable. 
+The Logarithmic Mean Divisia Index (LMDI) is an analytical method that breaks down aggregate changes in a variable into several effects to identify the main drivers behind the changes in the variable of interest. Using the logarithmic mean, it allows for consistent results in the presence of zero or missing values. The LMDI can be applied in an additive or a multiplicative method : The additive method consists in representing the absolute effect of a factor to the changes in the variable of interest. The total change in the variable of interest is expressed as the sum of the contributions of all the factors taken into account. The multiplicative method corresponds to computing the relative contribution of each factor to the changes in the variable of interest (expressed in general in percentages). Then, the variable of interest is expressed as a product of the relative contributions of each variable.
 
-In this case, we chose to use the Additive LMDI method given the nature of the factors. Indeed, industry and workforce characteristics such as wage and employment size vary in general in absolute terms, which makes the interpretation of their effect in the LMDI decomposition easier using the additive approach. Moreover, this approach makes a cross-sector or a temporal analysis more straightforward than the multiplicative one, where we would be comparing relative impacts across groups. ([Ang, 2015]( https://doi.org/10.1016/j.enpol.2015.07.007))
+In this case, we chose to use the Additive LMDI method given the nature of the factors. Indeed, industry and workforce characteristics such as wage and employment size vary in general in absolute terms, which makes the interpretation of their effect in the LMDI decomposition easier using the additive approach. Moreover, this approach makes our panel analysis more straightforward than the multiplicative one, where we would be comparing relative impacts across groups. ([Ang, 2015](https://doi.org/10.1016/j.enpol.2015.07.007))
 
 In the second part of our analysis, we will try to identify the effect of the regulatory environment on CO2 emissions across industries. For this study, we plan on conducting a panel analysis to have more information and to study the evolution in behavior of each industry over time. It will allow us to analyse the heterogeneity of responses of these industries (i.e. if some of them are more responsive to tax on their emissions than others).
 
-To compare regulatory environments, we use California as a treatment group. California is a huge polluting state (second most important emitter of C02 in the US)that has been making efforts to transition towards clean energies as it introduced a cap-and-trade program in 2015 to regulate emissions. Our control group will be Texas, the leading energy supplier in the U.S. that still relies in majority on fossil fuels (most important emitter of C02 in the US). Studying these two states together allows for understanding how a change in environmental policy shapes CO2 emissions at a sectoral level. 
+To compare regulatory environments, we use California as a treatment group. California is a huge polluting state (second most important emitter of C02 in the US)that has been making efforts to transition towards clean energies as it introduced a cap-and-trade program in 2015 to regulate emissions. Our control group will be Texas, the leading energy supplier in the U.S. that still relies in majority on fossil fuels (most important emitter of C02 in the US). Studying these two states together allows for understanding how a change in environmental policy shapes CO2 emissions at a sectoral level.
 
 ```{r}
 #| message: false
@@ -113,38 +110,37 @@ ggdag(dag, text = FALSE) +
 
 Variable of interest
 
-Our dependent variable will be `CO2 emissions (non biogenic)`, which corresponds to the unit of metric tons of CO2 (not issued from biomass) annually emitted by energy-producing facilities. 
+Our dependent variable will be `CO2 emissions (non biogenic)`, which corresponds to the unit of metric tons of CO2 (not issued from biomass) annually emitted by energy-producing facilities.
 
 Energy-producing firms can be divided in three groups :
 
-- Direct emitters, which correspond to facilities that combust fuels or otherwise put greenhouse gases into the atmosphere directly from their facility (ex. power plants).
+-   Direct emitters, which correspond to facilities that combust fuels or otherwise put greenhouse gases into the atmosphere directly from their facility (ex. power plants).
 
-- Energy suppliers that supply products into the economy which emit greenhouse gases into the atmosphere, when combusted or released (ex. gasoline production).
+-   Energy suppliers that supply products into the economy which emit greenhouse gases into the atmosphere, when combusted or released (ex. gasoline production).
 
-- CO2 injection facilities, ie. wells that a CO2 stream into the subsurface (ex. oil pumping).
+-   CO2 injection facilities, ie. wells that a CO2 stream into the subsurface (ex. oil pumping).
 
 Independent variables
 
 There is literature highlighting the effect of average number of hours worked on carbon emissions with model including the population/industry size as a factor (see for example [Fitzgerald, 2022](https://doi.org/10.1016/j.erss.2021.102385) ). We decided to keep the size aspect with `total_Emp` (that proxies the size of an industry by counting the number of employees working) but to analyze the effect of the average annual wage on those carbon emissions.
 
-We chose to use `avg_EarnS` as a proxy for workforce skill level and investment in human capital. The idea behind this is that "greener jobs" (so here represented by jobs associated with firms emitting relatively low levels of C02) tends to hire more skilled workers (see [Bowen et al., 2018](https://www.sciencedirect.com/science/article/pii/S0140988318300963), [Elliott and Lindley (2017)](https://www.sciencedirect.com/science/article/abs/pii/S0921800916311442)) with higher wages associated. Therefore, we expect a negative relationship between wage and CO2 emissions. 
+We chose to use `avg_EarnS` as a proxy for workforce skill level and investment in human capital. The idea behind this is that "greener jobs" (so here represented by jobs associated with firms emitting relatively low levels of C02) tends to hire more skilled workers (see [Bowen et al., 2018](https://www.sciencedirect.com/science/article/pii/S0140988318300963), [Elliott and Lindley (2017)](https://www.sciencedirect.com/science/article/abs/pii/S0921800916311442)) with higher wages associated. Therefore, we expect a negative relationship between wage and CO2 emissions.
 
 Another key variable is Net employment change (`total_FrmJbC`) which will be used as a proxy for contraction or expansion of firms in an industry. The hypothesis is that industries with quick expansions may emit more due to production scale (and inverse effect for industries shrinking).
 
 Additionnally, we create dummies to separate our analysis in groups :
 
-- `State` is divided in two (California and Texas)
+-   `State` is divided in two (California and Texas)
 
-- A policy dummy was added to study the impact of new regulations aimed at reducing emissions. We will study the heterogeneity of response depending on the industry.
+-   A policy dummy was added to study the impact of new regulations aimed at reducing emissions. We will study the heterogeneity of response depending on the industry.
 
 ## Data Description
 
-The dataset we will be using for our analysis corresponds to a merge of two datasets : one from the US Census Bureau which provides data on Quarterly workforce characteristics of workers in California and Texas, and another from the US Environmental Protection Agency which provides data on energy-producing facilities in the US. 
- 
+The dataset we will be using for our analysis corresponds to a merge of two datasets : one from the US Census Bureau which provides data on Quarterly workforce characteristics of workers in California and Texas, and another from the US Environmental Protection Agency which provides data on energy-producing facilities in the US.
+
 After merging and cleaning, we ended up with a dataset of 18270 observations from the two States of interest, California and Texas, covering yearly the period 2013 to 2023. We chose this time period because our emissions dataset covers years from 2010 to 2023 but the first years had sparse data. Thus we decided to delete those years for clarity's sake, which should not induce any major changes in further analyses.
 
 The following tables provide an overview of the final joined dataset (Table 1) and a analysis sector by sector of extremum levels and contributions (Table 2).
-
 
 ```{r}
 #| echo: false
@@ -213,19 +209,17 @@ NAICS2_level_summary |>
   kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
 ```
 
-We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To enhance the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. 
-The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019))  but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
+We notice that there is no industries in Texas that reported carbon emissions in the NAICS 11 sectors, namely Agriculture, Forestry, Fishing and Hunting. On the other hand, there is no Californian firms that have reported carbon emissions in both NAICS 23 and 49 sectors, namely Construction and Transportation/Warehousing. To enhance the readability of our following graphical representations and because their contribution to global carbon emissions are infinitesimal (around 0.001% maximum) we will cancel out those industries from our analysis and interpretations. The analysis of carbon emissions of those sectors is indeed interesting but less with our energy-producing approach, according to the three types we defined. For example, the construction sector accounted for 36% of total US CO2 emissions in the US in 2018 ([EIA](https://www.iea.org/reports/global-status-report-for-buildings-and-construction-2019)) but we see that the part we are interested in only accounts for 0.00013% of total C02 emissions in Texas and California.
 
-Another key observation is the sector Contribution of each State's total CO2 emissions. We notice that the contribution is highly uneven, with sector 21 and 22 accounting for more than 95% of total Texas' emissions while accounting only for around 65% in California. 
-
+Another key observation is the sector Contribution of each State's total CO2 emissions. We notice that the contribution is highly uneven, with sector 21 and 22 accounting for more than 95% of total Texas' emissions while accounting only for around 65% in California.
 
 -- faire un graphique
 
-The latter State has more sectors that  -- continuer l'analyse
+The latter State has more sectors that -- continuer l'analyse
 
 ## Part 1 : Non-causal analysis
 
-We want to determine the size of the contribution of `avg_EarnS`and `total_Emp` in the changes of `Total CO2 Emissions (non_biogenic)` by `NAICS2  (sectors)` in California and Texas. 
+We want to determine the size of the contribution of `avg_EarnS`and `total_Emp` in the changes of `Total CO2 Emissions (non_biogenic)` by `NAICS2  (sectors)` in California and Texas.
 
 ### Graphical analysis
 
@@ -412,118 +406,238 @@ plot_grid(
 
 ### LMDI decomposition
 
+$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$
+$ E = ∑_i(Q_iS_iI_i)$
+$\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$
+$\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$
+$\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$
+$\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$
 
 
 ```{r}
+# Calculate Q (Total Employment), S (Activity Share), and I (Intensity)
+joined_dataset_preparation <- joined_dataset |> 
+  group_by(year,`NAICS2  (sectors)`) |>
+    mutate(Total_Emp_sector = sum(total_Emp, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(year,industry) |>
+  mutate(
+    Activity_Share = total_Emp / Total_Emp_sector,
+    Intensity = `Total CO2 Emissions (non_biogenic)` / total_Emp
+  )
 
 
-# Filter data for the base year (2013)
 base_year <- 2013
-data_base <- joined_dataset  |> filter(year == base_year)
+target_year <- 2023
 
-# Calculate variations from 2013 to subsequent years
-lmdi_results <- joined_dataset |>
-  filter(year > base_year) |> # Only keep years after 2013
-  left_join(data_base, by = "NAICS2  (sectors)", suffix = c("", "_base")) |> # Join with base year
+joined_dataset_2013 <- joined_dataset_preparation |> filter(year == base_year)
+joined_dataset_2023 <- joined_dataset_preparation |> filter(year == target_year)
+
+# Decomposition using the  framework
+lmdi_results <- joined_dataset_2023 |>
+  left_join(joined_dataset_2013, by = "industry", suffix = c("", "_base")) |>
+  filter(`NAICS2  (sectors)` != 42) |>
   mutate(
-    
-    #Calculating the log mean used in the latter formulae (it is equal to x if x - y = 0)
-    log_mean = if_else(`Total CO2 Emissions (non_biogenic)` != `Total CO2 Emissions (non_biogenic)_base`, (`Total CO2 Emissions (non_biogenic)` - `Total CO2 Emissions (non_biogenic)_base`)/ (log(`Total CO2 Emissions (non_biogenic)` ) - log(`Total CO2 Emissions (non_biogenic)_base`)), `Total CO2 Emissions (non_biogenic)` ),
-        
-    # Calculate contributions using LMDI formulas
-    Delta_Emp = if_else(total_Emp > 1, log_mean * log(total_Emp / total_Emp_base), 0),
-    Delta_EarnS = log_mean * log(avg_EarnS / avg_EarnS_base),
-    # Calculate total variation in emissions equal to the sum of the two factors by model construction
-    Total_CO2_var = Delta_Emp + Delta_EarnS,
-
+    log_mean = if_else(
+      `Total CO2 Emissions (non_biogenic)` != `Total CO2 Emissions (non_biogenic)_base`,
+      (`Total CO2 Emissions (non_biogenic)` - `Total CO2 Emissions (non_biogenic)_base`) /
+      (log(`Total CO2 Emissions (non_biogenic)`) - log(`Total CO2 Emissions (non_biogenic)_base`)),
+      `Total CO2 Emissions (non_biogenic)`
+    ),
+    Delta_Activity = log_mean * log(Total_Emp_sector / Total_Emp_sector_base),
+    Delta_Share = log_mean * log(Activity_Share / Activity_Share_base),
+    Delta_Intensity = log_mean * log(Intensity / Intensity_base)
   ) |>
   group_by(`NAICS2  (sectors)`) |>
   summarize(
-    Total_CO2_var = sum(Total_CO2_var, na.rm = TRUE),
-    Contribution_Q = sum(Delta_Emp, na.rm = TRUE),
-    Contribution_S = sum(Delta_EarnS, na.rm = TRUE),
+    Total_CO2_var = sum(Delta_Activity + Delta_Share + Delta_Intensity, na.rm = TRUE),
+    Contribution_Activity = sum(Delta_Activity, na.rm = TRUE),
+    Contribution_Share = sum(Delta_Share, na.rm = TRUE),
+    Contribution_Intensity = sum(Delta_Intensity, na.rm = TRUE),
     .groups = "drop"
   )
 
-# Table to see results
-print(lmdi_results)
+contribution_summary_table <- lmdi_results |>
+  group_by(`NAICS2  (sectors)`) |>
+  mutate(
+    A_Percentage = 100 * Contribution_Activity / Total_CO2_var,
+    S_Percentage = 100 * Contribution_Share / Total_CO2_var,
+    I_Percentage = 100 * Contribution_Intensity / Total_CO2_var,
+  )
+  
+
+# Table summarizing contributions in value and percent
+contribution_summary_table |>
+  mutate(
+    "CO2 emissions Variation" = Total_CO2_var,
+    "Activity contribution" = Contribution_Activity,
+    "Structure contribution" = Contribution_Share,
+    "Intensity contribution" = Contribution_Intensity,
+    "Activity contribution (in %)" = A_Percentage,
+    "Structure contribution (in %)" = S_Percentage,
+    "Intensity contribution (in %)" = I_Percentage,
+    .keep = "none"
+  ) |>
+  kable("html", caption = "Contribution of each factor") |>
+  kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
 
 ```
 
 
 ```{r}
-# Calculate Average Variations and Contributions by Sector
-average_summary_table <- lmdi_results |>
-  group_by(`NAICS2  (sectors)`) |>
-  summarize(
-    Avg_CO2_Variation = mean(Total_CO2_var, na.rm = TRUE),
-    Avg_Contribution_Emp = mean(Contribution_Q, na.rm = TRUE),
-    Avg_Contribution_EarnS = mean(Contribution_S, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
+# Graphical representation updated with A (Activity), S (Structure), and I (Intensity)
+normalized_data <- contribution_summary_table |>
   mutate(
-    Emp_Percentage = 100 * Avg_Contribution_Emp / Avg_CO2_Variation,
-    EarnS_Percentage = 100 * Avg_Contribution_EarnS / Avg_CO2_Variation
+    Total_Abs_Contrib = abs(A_Percentage) + abs(S_Percentage) + abs(I_Percentage),
+    Activity_Percentage_Norm = abs(A_Percentage) / Total_Abs_Contrib * 100,
+    Structure_Percentage_Norm = abs(S_Percentage) / Total_Abs_Contrib * 100,
+    Intensity_Percentage_Norm = abs(I_Percentage) / Total_Abs_Contrib * 100
+  ) |>
+  select(`NAICS2  (sectors)`, Activity_Percentage_Norm, Structure_Percentage_Norm, Intensity_Percentage_Norm) |>
+  pivot_longer(
+    cols = c(Activity_Percentage_Norm, Structure_Percentage_Norm, Intensity_Percentage_Norm),
+    names_to = "Factor",
+    values_to = "Normalized_Percentage_Contribution"
   )
 
-# Displaying the synthetic table
-print(average_summary_table)
+# Updated bar chart
+normalized_data |> 
+  ggplot(aes(x = `NAICS2  (sectors)`, y = Normalized_Percentage_Contribution, fill = Factor)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(
+    title = "Contributions (%) of Activity (A), Structure (S), and Intensity (I) \n to CO2 Variations by Sector",
+    x = "Sector (NAICS 2)",
+    y = "Normalized Percentage Contribution",
+    fill = "Factor"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
 
 ```{r}
+# Summarizing average contributions across all sectors and years
+relative_contrib_between_var <- normalized_data |>
+  group_by(Factor) |> 
+  summarize(Average_Percentage_Contribution = mean(Normalized_Percentage_Contribution, na.rm = TRUE))
 
-# First graph with percentage contribution
-plot_data <- average_summary_table |>
-  pivot_longer(cols = c(Emp_Percentage, EarnS_Percentage),
-               names_to = "Factor",
-               values_to = "Percentage_Contribution")
+# Rename factors for better readability
+relative_contrib_between_var <- relative_contrib_between_var |> 
+  mutate(Factor = case_when(
+    Factor == "Activity_Percentage_Norm" ~ "Activity (A)",
+    Factor == "Structure_Percentage_Norm" ~ "Structure (S)",
+    Factor == "Intensity_Percentage_Norm" ~ "Intensity (I)",
+  ))
 
-
-ggplot(plot_data, aes(x = `NAICS2  (sectors)`, y = Percentage_Contribution, fill = Factor)) +
-  geom_bar(stat = "identity", position = "stack") +
+# Horizontal bar chart that describes the relative importance of each factor between them
+ggplot(relative_contrib_between_var, aes(x = Average_Percentage_Contribution, y = reorder(Factor, Average_Percentage_Contribution), fill = Factor)) +
+  geom_bar(stat = "identity") +
   labs(
-    title = "Percentage Contributions of Employment (Q) and Earnings (S) Factors to CO2 Variations by Sector",
-    x = "Sector (NAICS 2)",
-    y = "Percentage Contribution to CO2 Variation",
+    title = "Relative Importance of Factors in CO2 Variations",
+    x = "Average Percentage Contribution",
+    y = "Factor",
     fill = "Factor"
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-# Second graph with absolute values
-plot_data2 <- average_summary_table |>
-  pivot_longer(cols = c(Avg_Contribution_Emp, Avg_Contribution_EarnS),
-               names_to = "Factor",
-               values_to = "Average_abs_Contribution")
-
-
-ggplot(plot_data2, aes(x = `NAICS2  (sectors)`, y = Average_abs_Contribution, fill = Factor)) +
-  geom_bar(stat = "identity", position = "stack") +
-  labs(
-    title = "Average absolute Contributions of Employment (Q) and Earnings (S) Factors to CO2 Variations by Sector",
-    x = "Sector (NAICS 2)",
-    y = "Average Contribution to CO2 Variation",
-    fill = "Factor"
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+  )
 
 ```
 
+```{r}
+
+# Prepare the subset including Total_Emp_sector_2
+joined_subset_preparation <- joined_dataset |> 
+  filter(`NAICS2  (sectors)` %in% c(21, 22)) |> # Keep only sectors 21 and 22
+  group_by(year, `NAICS2  (sectors)`) |>
+  mutate(Total_Emp_sector_2 = sum(total_Emp, na.rm = TRUE)) |> # Calculate Total Employment per sector
+  ungroup() |>
+  group_by(year, State, industry) |>
+  mutate(
+    Activity_Share = total_Emp / Total_Emp_sector_2,
+    Intensity = `Total CO2 Emissions (non_biogenic)` / total_Emp
+  )
+
+# Split into base and target year
+joined_subset_2013 <- joined_subset_preparation |> filter(year == base_year)
+joined_subset_2023 <- joined_subset_preparation |> filter(year == target_year)
+
+# Perform LMDI decomposition using the prepared subset
+state_sector_lmdi <- joined_subset_2023 |>
+  left_join(joined_subset_2013, by = "industry", suffix = c("", "_base")) |>
+  group_by(State, `NAICS2  (sectors)`) |>
+  mutate(
+    log_mean = if_else(
+      `Total CO2 Emissions (non_biogenic)` != `Total CO2 Emissions (non_biogenic)_base`,
+      (`Total CO2 Emissions (non_biogenic)` - `Total CO2 Emissions (non_biogenic)_base`) / 
+        (log(`Total CO2 Emissions (non_biogenic)`) - log(`Total CO2 Emissions (non_biogenic)_base`)),
+      `Total CO2 Emissions (non_biogenic)`
+    ),
+    Delta_Activity = log_mean * log(Total_Emp_sector_2 / Total_Emp_sector_2_base),
+    Delta_Structure = log_mean * log(Activity_Share / Activity_Share_base),
+    Delta_Intensity = log_mean * log(Intensity / Intensity_base)
+  ) |> 
+  summarize(
+    Contribution_Activity = sum(Delta_Activity, na.rm = TRUE),
+    Contribution_Structure = sum(Delta_Structure, na.rm = TRUE),
+    Contribution_Intensity = sum(Delta_Intensity, na.rm = TRUE),
+    Total_CO2_Change = sum(Contribution_Activity + Contribution_Structure + Contribution_Intensity, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 
+# Step 3a: Prepare data for absolute contributions visualization
+state_contributions <- state_sector_lmdi |> 
+  pivot_longer(
+    cols = starts_with("Contribution"),
+    names_to = "Factor",
+    values_to = "Contribution"
+  )
 
+# Step 3a: Plot absolute contributions
+ggplot(state_contributions, aes(x = `NAICS2  (sectors)`, y = Contribution, fill = Factor)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~ State) +
+  labs(
+    title = "Contributions of Factors to CO2 Variations in NAICS 21 and 22 by State",
+    x = "Sector (NAICS 2)",
+    y = "Contribution to CO2 Variation",
+    fill = "Factor"
+  ) +
+  theme_minimal()
+
+# Step 3b: Normalize contributions for percentage analysis
+state_relative <- state_sector_lmdi |>
+  mutate(
+    Total_Contribution = abs(Contribution_Activity) + abs(Contribution_Structure) + abs(Contribution_Intensity),
+    Activity_Percentage = 100 * abs(Contribution_Activity) / Total_Contribution,
+    Structure_Percentage = 100 * abs(Contribution_Structure) / Total_Contribution,
+    Intensity_Percentage = 100 * abs(Contribution_Intensity) / Total_Contribution,
+  ) |> 
+  pivot_longer(
+    cols = ends_with("_Percentage"),
+    names_to = "Factor",
+    values_to = "Percentage"
+  )
+
+# Step 3b: Plot relative contributions
+ggplot(state_relative, aes(x = `NAICS2  (sectors)`, y = Percentage, fill = Factor)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~ State) +
+  labs(
+    title = "Relative Contributions of Factors to CO2 Variations in NAICS 21 and 22 by State",
+    x = "Sector (NAICS 2)",
+    y = "Percentage Contribution",
+    fill = "Factor"
+  ) +
+  theme_minimal()
+
+```
 
 
 
 ## Model Fitting
 
+### Base Model
 
-### Base Model 
 ```{r}
 #| echo: false
 #| message: false
@@ -540,7 +654,9 @@ base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp`, data = da
 ## Summary of the OLS results
 summary(base_ols_model)
 ```
+
 ### Extended model with dummy variable
+
 ```{r}
 #| echo: false
 #| message: false
@@ -561,6 +677,7 @@ plot(extend_ols_model)
 ## Model Extension and Fixed Effects
 
 ### Testing the model
+
 ```{r}
 
 # Testing model assumptions
@@ -574,6 +691,7 @@ bptest(extend_ols_model)
 ```
 
 ### Introducing fixed effects
+
 ```{r}
 ## Introducing fixed effect year
 fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln earn` + `ln emp` + state_dummy | `NAICS2  (sectors)`, data = dataset_for_ols)
@@ -582,7 +700,4 @@ fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln earn` + `l
 summary(fe_ols_model, vcov = "hetero")
 ```
 
-
 ## Conclusion
-
-

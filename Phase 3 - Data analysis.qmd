@@ -417,16 +417,11 @@ Note : We chose not to use the  `facet.wrap()` command to be able to readjust to
 
 ### LMDI decomposition
 
-
 $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$ $E = ∑_i(Q_iS_iI_i)$ $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ $\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$
 
+To better analyze the contributions of employment we need to analyze precisely its relationship with the Total C02 emissions. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173)) and has several possible modelizations. We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests. The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula :
 
-To better analyze the contributions of employment we need to analyze precisely its relationship with the Total C02 emissions. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z ) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173 )) and has several possible modelizations. 
-We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests.
-The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the  quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula : 
-
-
-As we explained in the Methodology part, we will choose an additive LMDI  due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It follows the following structure of our model :
+As we explained in the Methodology part, we will choose an additive LMDI due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It follows the following structure of our model :
 
 ```{r}
 # Calculate Q (Total Employment), S (Activity Share), and I (Intensity)
@@ -496,7 +491,6 @@ contribution_summary_table |>
   kable_styling(full_width = T, bootstrap_options = c("striped", "hover", "condensed"))
 
 ```
-
 
 ```{r}
 # Graphical representation updated with A (Activity), S (Structure), and I (Intensity)
@@ -657,11 +651,9 @@ Therefore, we establish a relationship between our workforce characteristics, Av
 
 $$
 log(CO2 emissions) = \beta_0 + log(Average Monthly Wage)\beta_1 + log(Total Employment)\beta_2 + \epsilon
-$$
-where CO2 Emissions corresponds to the logarithm of total CO2 Emissions (in unit metric tons) of one industry (NAICS4 level of aggregation); ln earn corresponds to the logarithm of average Monthly wage in one industry; ln emp corresponds to the logarithm of the total number of employees in one industry.
+$$ where CO2 Emissions corresponds to the logarithm of total CO2 Emissions (in unit metric tons) of one industry (NAICS4 level of aggregation); ln earn corresponds to the logarithm of average Monthly wage in one industry; ln emp corresponds to the logarithm of the total number of employees in one industry.
 
 We choose to use a log-log regression model to linearize a possibly non-linear relationship between our variables. Additionally, our dataset shows a high amount of extreme outliers,conducting to a highly skewed distribution. Log transformation makes the distribution of the dependent or independent variable closer to normal. To be able to use a log-log model, we deleted 9 observations (3 for CO2 Emissions and 6 for Total Employment).
-
 
 Using the Ordinary Least Squares method, we obtain the following results :
 
@@ -682,11 +674,9 @@ base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp`, data = da
 summary(base_ols_model)
 ```
 
+We observe that the variable `ln earn` is positive and highly significant with a p-value of less than 2e-16. That means that all else equal, a 1% increase in average monthly wage is associated with an approximately 3.04 % increase in CO2 emissions. On the other hand, `ln emp` is not statistically significant and is positively correlated with CO2 emissions : all else equal, a 1% increase of Total Employment in an industry is associated with a 0,06% increase of CO2 Emissions in that industry. These results partially contradict our initial hypothesis. On one hand, the higher the wage, the higher the CO2 emissions in an industry. If this result does not condone the concept of “green jobs”, it aligns with the IEA’s report, according to which higher-emitting industries, like oil extraction, pay higher wages to employees than more volatile industries. On the other hand, the more employees there are, the higher the emissions (even if not significantly). This confirms the idea that employment size works as a proxy for industry size. The bigger the industry, the more it should emit.
 
-We observe that the variable `ln earn` is positive and highly significant with a p-value of less than 2e-16. That means that all else equal, a 1% increase in average monthly wage is associated with an approximately 3.04 % increase in CO2 emissions. On the other hand, `ln emp` is not statistically significant and is positively correlated with CO2 emissions : all else equal, a 1% increase of Total Employment in an industry is associated with a 0,06% increase  of CO2 Emissions in that industry. These results partially contradict our initial hypothesis. On one hand, the higher the wage, the higher the CO2 emissions in an industry. If this result does not condone the concept of “green jobs”, it aligns with the IEA’s report, according to which higher-emitting industries, like oil extraction, pay higher wages to employees than more volatile industries. On the other hand, the more employees there are, the higher the emissions (even if not significantly). This confirms the idea that employment size works as a proxy for industry size. The bigger the industry, the more it should emit.
-
-The R² and Adjusted R² are both  0.17, which means that approximately 17% of the changes in CO2 emissions can be explained by variations of workforce characteristics. This relatively low value indicated probable OVB, as we did not include traditional explanatory variables in our model, such as energy consumption for example. Nonetheless, we have an F-statistic of 106.4 (p-value < 2.2e-16), which indicates overall, our model is statistically significant.
-
+The R² and Adjusted R² are both 0.17, which means that approximately 17% of the changes in CO2 emissions can be explained by variations of workforce characteristics. This relatively low value indicated probable OVB, as we did not include traditional explanatory variables in our model, such as energy consumption for example. Nonetheless, we have an F-statistic of 106.4 (p-value \< 2.2e-16), which indicates overall, our model is statistically significant.
 
 ### Extended model with dummy variable
 
@@ -698,7 +688,7 @@ $$
 log(CO2 emissions) = \beta_0 + log(Average Monthly Wage)\beta_1 + log(Total Employment)\beta_2 + Policy\beta_3 + \epsilon
 $$
 
-Applying OLS, we now have the following results : 
+Applying OLS, we now have the following results :
 
 ```{r}
 #| echo: false
@@ -714,7 +704,7 @@ extend_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp` + state_
 summary(extend_ols_model)
 ```
 
-As in the previous results, we still have a positive and highly significant correlation between average monthly wage and CO2 emissions per industry : A 1% increase in average wages is associated with approximately a 3.16% increase in CO2 emissions, keeping all other variables constant. On the contrary ln emp is still not statistically significant (p-value = 0.134) and is still positive. Finally, the dummy `Environment` proves to be highly significant (p-value < 0.01) and positive. We could infer that firms in California after the introduction of the cap-and-trade program in 2015 emit approximately 90% less CO2 than firms in Texas during the same period, controlling for wages and employment. This result confirms our main hypothesis : The cap-and-trade program has a significant effect on the emissions of industries in our dataset.
+As in the previous results, we still have a positive and highly significant correlation between average monthly wage and CO2 emissions per industry : A 1% increase in average wages is associated with approximately a 3.16% increase in CO2 emissions, keeping all other variables constant. On the contrary ln emp is still not statistically significant (p-value = 0.134) and is still positive. Finally, the dummy `Environment` proves to be highly significant (p-value \< 0.01) and positive. We could infer that firms in California after the introduction of the cap-and-trade program in 2015 emit approximately 90% less CO2 than firms in Texas during the same period, controlling for wages and employment. This result confirms our main hypothesis : The cap-and-trade program has a significant effect on the emissions of industries in our dataset.
 
 Additionally, the Adjusted R² is 0.1994, slightly higher than the previous model (0.1784), which shows in theory that including the Environment dummy improves our model.
 
@@ -734,7 +724,21 @@ plot(extend_ols_model)
 bptest(extend_ols_model)
 ```
 
+The results of the regression question the conformity to the model’s initial assumptions, especially in terms of normality of residuals, i.e. symmetrical distribution of residuals around 0 and homoscedasticity, i.e. constant variance among the residuals of the regression. 
+ 
+We can assess normality of residuals by first plotting the residuals in a Q-Q plot. We observe that while the residuals follow the diagonal line in general, the points deviate significantly in the tails.This implies that the residuals are not normally distributed. Secondly, the Residuals vs. Fitted plot reveals that the residuals of the regression are not randomly scattered, as they should be in the absence of heteroscedasticity. On the contrary, the residuals seem to follow a decreasing funnel shape, which suggests non-constant variance of the residuals i.e. presence of heteroscedasticity. This result is further confirmed after implementing a Breusch-Pagan test of heteroscedasticity : the p-value < 2.2e-16 confirms the presence of strong heteroscedasticity which we will proceed to correct in the next section.
+
+
+
 ### Introducing fixed effects
+
+The conclusions of the previous tests lead us to consider that heterogeneity in the relationship between our dependent variable and independent variables may bias our results. The graphical analysis effectuated in the first part of the paper showed heterogeneity of workforce characteristics at a sectoral level (NAICS 2 level of aggregation). To confirm this hypothesis, we introduce a fixed-effect model following this equation : 
+
+log(CO2 emissions) = log(Average Monthly Wage) + log(Total Employment) + Environment | NAICS 2 sectors
+
+where NAICS 2 sector corresponds to sectoral fixed effect i.e.controlling for unobserved heterogeneity across sectors. Additionally, we will implement robust standard errors to correct further our heteroscedasticity and normality issues.
+
+Applying a fixed-effect OLS with robust standard errors, using the `fixest` package, we now have the following final result : 
 
 ```{r}
 ## Introducing fixed effect year
@@ -743,5 +747,10 @@ fe_ols_model <- felm(log(`Total CO2 Emissions (non_biogenic)`) ~  `ln earn` + `l
 ## Summary of fixed-effect model with robust standard errors
 summary(fe_ols_model, vcov = "HC1")
 ```
+
+The `ln earn` variable remains highly significant and positively correlated with CO2 emissions, just like in the previous results. The high similarity between the coefficients in all three models implies that wage does not correlate that differently with CO2 emissions across sectors. Similarly, the Environment dummy keeps its negative sign (-0.94) and gains significance (p = 9.22e-11). After controlling for sectoral fixed effects, firms in California, since the Cap-and-Trade program, emit approximately 94% less CO2 than similar firms in Texas or California pre-2015, thus corresponding to our previous result. Finally, the variable `ln emp` is now negatively correlated with CO2 emissions of industries (-0.004), but still not statistically significant (p = 0.942). The negative sign could be due to the fact that high-emitting industries (like fuel suppliers) may be more capital-intensive than labor intensive. Sectoral differences could have been masking the true effect of employment size on CO2 emissions of industries. We could indeed infer from the result that labor-intensive industries, i.e. that have more employees emit less than capital-intensive industries. However, this hypothesis should be relativized as the variable is even less significant than before.
+
+Compared to the previous model, the residual standard error has decreased to 2.085 (from a previous 2.314), which indicates improved fit. The Adjusted R² is now 0.3497, which is much higher than in the previous models (lower than 20%).  The fixed effects improve the explanatory power of the model, also highlighted by a high F-statistic (72.33). Overall, the fixed-effects model seems to provide more reliable results compared to the earlier models.
+
 
 ## Conclusion

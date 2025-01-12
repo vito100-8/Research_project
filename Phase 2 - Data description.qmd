@@ -467,6 +467,10 @@ Finally, control variables will be implemented to capture unwanted effect such a
 
 The formal construction of our model will be described in the next phase.
 
+```{r}
+# Saving the final dataset for the next phase
+saveRDS(joined_dataset, file = "joined_dataset.rds")
+```
 
 
 

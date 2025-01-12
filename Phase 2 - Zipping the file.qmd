@@ -4,12 +4,18 @@ format: html
 editor: visual
  
 ---
-## Creation of the zip file
+```{r}
+library(zip)
+```
+
+## Creation of the zip file for Phase 2
 
 ```{r}
 
 #| echo: false
 #| message: false
+
+
 
 # Set the working directory to the project folder
 setwd(here())
@@ -43,6 +49,44 @@ if (file.exists(zip_file_name)) {
 }
 
 
+
+```
+
+## Creation of zip file for phase 3 : final rendering
+
+
+```{r}
+#| echo: false
+#| message: false
+
+setwd(here())
+# We select the data folder
+data_folder_3 <- "data"  
+
+# putting all data files in the folder
+data_files_3 <- list.files(data_folder_3, full.names = TRUE, recursive = TRUE)
+
+# Listing all the necessary files
+files_to_zip_3 <- c(
+  "Research_project.Rproj",
+  data_files_3,
+  "Phase 2 - Data description.qmd",
+  "Phase 3 - Data analysis.qmd",
+  "Phase-3---Data-analysis.pdf",
+  "README.md"
+)
+
+zip_file_name_3 <- "Research_project.zip"
+
+# Creating the zip archive
+zipr(zip_file_name_3,files_to_zip_3)
+
+# To have the confirmation that it works
+if (file.exists(zip_file_name_3)) {
+  message("Successfully created ", zip_file_name_3)
+}else{
+  message("Failed to create the zip file.")
+}
 
 ```
 

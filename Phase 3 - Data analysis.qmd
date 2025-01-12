@@ -417,9 +417,7 @@ Note : We chose not to use the  `facet.wrap()` command to be able to readjust to
 
 ### LMDI decomposition
 
-$L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$  
-
-To better analyze the contributions of employment we need to analyze precisely its relationship with the Total C02 emissions. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173)) and has several possible modelizations. We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests. The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula : $E = \sum_iE_i$ 
+To better analyze the contributions of `total_Emp` we need to analyze precisely its relationship with `Total CO2 Emissions (non_biogenic)`. Index decomposition analysis (IDA) is a tool commonly used in energy and emission studies to capture drivers’ impacts on a change. For example, [Zhao and Chen (2014)](https://pubs.acs.org/doi/10.1021/es503513z) uses an IDA to study the drivers of agricultural consumptive water use, their IDA method is called the Logarithmic mean Divisia index (LMDI). The LMDI is currently the most common form of IDA analysis in research papers ([Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173)) and has several possible modelizations. We will thus use a LMDI approach based on the work of [Ang, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0301421515300173) to decompose the contributions of each factor on our variable of interests. The traditional method is to describe the emission (E) with three drivers : one linked to a quantity factor (Q), one linked to a structural factor (S) and the last one linked to an intensity or an efficiency factor (I). Here, the decomposition will be less standard as we choose `total_Emp` as the quantity variable. The logic behind this modelization is that total Employment of a sector denotes, according to our hypothesis, the quantity of Labor used and thus the quantity of human activity used as an input to produce the energy (notably by direct emission or by supplying it). In brief, we study the effect of a workforce characteristic variable as a quantity proxy. The rest of the model is constructed such that we have an equality between the two hand sides. We thus have the following formula : $E = \sum_iE_i$ 
 $\leftrightarrow  E = \sum_iQ(Q_i/Q)(E_i/Q_i)$ (by multiplicating and dividing by $Q_i$ and $Q$)  thus we obtain $E = ∑_i(Q_iS_iI_i)$
 
 As we explained in the Methodology part, we will choose an additive LMDI due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It has the following structure:
@@ -578,11 +576,14 @@ As we’ve seen sectors 21 and 22 represent  98% of total emissions, we will per
 
 ```{r}
 
-# Prepare the subset including Total_Emp_sector_2
+# Creating a subset that includes our wanted sectors
 joined_subset_preparation <- joined_dataset |> 
-  filter(`NAICS2  (sectors)` %in% c(21, 22)) |> # Keep only sectors 21 and 22
+   ## Keep only sectors 21 and 22
+  filter(`NAICS2  (sectors)` %in% c(21, 22)) |> 
+ 
   group_by(year, `NAICS2  (sectors)`) |>
-  mutate(Total_Emp_sector_2 = sum(total_Emp, na.rm = TRUE)) |> # Calculate Total Employment per sector
+  ## Compute Total Employment per sector
+  mutate(Total_Emp_sector_2 = sum(total_Emp, na.rm = TRUE)) |> 
   ungroup() |>
   group_by(year, State, industry) |>
   mutate(
@@ -590,11 +591,11 @@ joined_subset_preparation <- joined_dataset |>
     Intensity = `Total CO2 Emissions (non_biogenic)` / total_Emp
   )
 
-# Split into base and target year
+# Creation of the subset of our dataset for the years needed 
 joined_subset_2013 <- joined_subset_preparation |> filter(year == base_year)
 joined_subset_2023 <- joined_subset_preparation |> filter(year == target_year)
 
-# Perform LMDI decomposition using the prepared subset
+# Perform LMDI decomposition with the same framework and steps but  using the prepared subset 
 state_sector_lmdi <- joined_subset_2023 |>
   left_join(joined_subset_2013, by = "industry", suffix = c("", "_base")) |>
   group_by(State, `NAICS2  (sectors)`) |>
@@ -618,7 +619,7 @@ state_sector_lmdi <- joined_subset_2023 |>
   )
 
 
-# Step 3a: Prepare data for absolute contributions visualization
+# Preparing data for contributions (in values) visualization
 state_contributions <- state_sector_lmdi |> 
   pivot_longer(
     cols = starts_with("Contribution"),
@@ -626,9 +627,10 @@ state_contributions <- state_sector_lmdi |>
     values_to = "Contribution"
   )
 
-# Step 3a: Plot absolute contributions
+# Ploting absolute contributions
 ggplot(state_contributions, aes(x = `NAICS2  (sectors)`, y = Contribution, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
+  ## separate by State
   facet_wrap(~ State) +
   labs(
     title = "Contributions of Factors to CO2 Variations in NAICS 21 and 22 by State",
@@ -646,7 +648,7 @@ We firstly notice the difference of contribution depending on the State : it emp
 It then  appears that the majority of the emission’s increases in Texas is linked to Intensity. It reveals that the hike we previously mentioned is probably due to a worse energy mix and technology of production, the fracking which increased between the two periods is an example of such worsening.
 
 ```{r}
-# Step 3b: Normalize contributions for percentage analysis
+# Normalizing contributions for percentage analysis as in the general LMDI
 state_relative <- state_sector_lmdi |>
   mutate(
     Total_Contribution = abs(Contribution_Activity) + abs(Contribution_Structure) + abs(Contribution_Intensity),
@@ -660,7 +662,7 @@ state_relative <- state_sector_lmdi |>
     values_to = "Percentage"
   )
 
-# Step 3b: Plot relative contributions
+# Ploting relative contributions
 ggplot(state_relative, aes(x = `NAICS2  (sectors)`, y = Percentage, fill = Factor)) +
   geom_bar(stat = "identity", position = "stack") +
   facet_wrap(~ State) +
@@ -793,4 +795,7 @@ Compared to the previous model, the residual standard error has decreased to 2.0
 
 ## Conclusion
 
-In this work we studied the CO2 emissions of energy-producing firms in California and Texas and found that, according to the EIA's terminology and its data, Texas' firms emit, on average, a lot more than their Californian counterparts. This is particularly true for the Mining, Quarrying, and Oil and Gas Extraction (21) and Utilities (22) sectors that amount for nearly all emissions across our dataset. 
+In this work we studied the CO2 emissions of energy-producing firms in California and Texas and found that, according to the EIA's terminology and its data, Texas' firms emit, on average, a lot more than their Californian counterparts. This is particularly true for the Mining, Quarrying, and Oil and Gas Extraction (21) and Utilities (22) sectors that amount for nearly all emissions across our dataset. We observed that wages were correlated positively with the CO2 emissions while the pattern with total employment was more opaque. The LMDI decomposition method was used to evaluate the contributions of Quantity, Structural and Intensity drivers on the emissions by using total employment as proxy for industry size (and inputs utilization). We determined that carbon-intensity was the largest contribution on average while pure quantity effect was the smallest, revealing  potential weakness in our choice of proxy. Finally, we developed a regression model to assess the effect of an environmental policies and confirmed the small significance of total employment. The results led us to conclude that is had a substantial effect on the reduction of C02 emissions. Moreover, earnings were also highlighted as a significant drivers of carbon emissions across our models. 
+The work has several limitations. The main ones that occured to us are the data coverage, with several missing values in both datasheets that were not treated but filtered out, which may have induced bias in our results; the lack of control with traditional variables to avoid omitted variable bias, for example we did not include data about energy consumption (used in the vast majority of research papers).  
+
+

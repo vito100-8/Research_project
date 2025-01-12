@@ -243,7 +243,7 @@ We want to determine the size of the contribution of `avg_EarnS`and `total_Emp` 
 # Comparing the evolution of our main explanatory variables at a sectoral level
 
 ## Evolution of Total Annual Employment in NAICS2 sectors
-graph_emp1 <- joined_dataset |>
+joined_dataset |>
   ## Filtering out sectors which do not have data for both States
   filter(`NAICS2  (sectors)` != 11 & `NAICS2  (sectors)` != 23 & `NAICS2  (sectors)` != 49) |>
   group_by(`NAICS2  (sectors)`, year) |>
@@ -263,11 +263,12 @@ graph_emp1 <- joined_dataset |>
                      sec.axis = sec_axis(~ .*5, name = "Total Employment")) +
   labs(title = "Evolution of Total Employment by Sector",
        x = "Year") +
+  theme(legend.position.inside = c(1.55, 0.5)) +
   ## Background without grid or annotations
   theme_minimal()
 
 ## Evolution of Average Monthly Wage in NAICS2 sectors
-graph_wage1 <- joined_dataset |>
+joined_dataset |>
   ## Filtering out sectors which do not have data for both States
   filter(`NAICS2  (sectors)` != 11 & `NAICS2  (sectors)` != 23 & `NAICS2  (sectors)` != 49) |>
   group_by(`NAICS2  (sectors)`, year) |>
@@ -277,22 +278,11 @@ graph_wage1 <- joined_dataset |>
   geom_line(aes(y = avg_wage_sector, colour = `NAICS2  (sectors)`)) +
   geom_point(aes(y = avg_wage_sector, colour = `NAICS2  (sectors)`), size = 1) +
   scale_y_continuous(name = "Average Monthly Wage") +
-  labs(title = "Evolution of Average Monthly Wage by Sector",
+  labs(title = "Evolution of Average Monthly Wage \n by Sector",
     x = "Year") +
+  theme(legend.position.inside = c(1.55, 0.5)) +
   theme_minimal()
 
-## Using the cowplot package to visualize both graphs side by side 
-## Combining legends from bothgraphs
-legend <- get_legend(graph_emp1)
-
-## Removing legends from original plots
-graph_emp1 <- graph_emp1 + theme(legend.position = "none")
-graph_wage1 <- graph_wage1 + theme(legend.position = "none")
-
-# Combining the plots with the shared legend and rescaling their position
-plot_grid(
-  graph_emp1, graph_wage1, legend, 
-  ncol = 3, rel_widths = c(1, 0.8, 0.3))
 ```
 
 First, we observe a relatively high dispersion of monthly average wages across sectors. In 2013, `avg_EarnS` ranged from around 3500 to 7500 dollars and in 2023, if we exclude some big outliers, the range was 5000 - 10000\$ . It seems that from 2013 to 2023, the lower wages increased by approximately 40% during the time period, while the highest wages increased by a third. On the other hand, Total Employment stayed relatively stable in most sectors (especially in smaller sectors), with an overall increase in 10 years. Most sectors experienced job contractions during the Covid-period, starting with sector 72 (Accommodation & Food Services). We can observe that sector 21 (Mining, Quarrying & Oil & Gas Extraction) experienced massive lay-offs in 2015 and 2016, probably due to the sharp decline in oil-prices during the mid-2014s, which impacted especially shale oil companies in Texas. This could also have impacted the Manufacturing sector 33 (also shown in the decline during this period).
@@ -309,7 +299,7 @@ The second and third graph show, respectively, the evolution of `avg_EarnS` and 
 # Comparing the evolution of Average Monthly Wage and CO2 Emissions by Sectors in California and Texas
 
 ## Evolution in California
-graph_CA_wage <- joined_dataset |>
+joined_dataset |>
   filter(`NAICS2  (sectors)` != 11 & `NAICS2  (sectors)` != 23 & `NAICS2  (sectors)` != 49) |>
   ## Filtering data for California
   filter(State == "CA") |>
@@ -329,13 +319,14 @@ graph_CA_wage <- joined_dataset |>
     ## Creating a secondary axis for CO2 Emissions per firm, converting back its scale to correctly show the values (multiplying by 1000)
     sec.axis = sec_axis(~ . * 500, name = "Average CO2 Emissions per Firm")) +
   labs(
-    title = "California's CO2 Emissions & Average Wage",
+    title = "California's CO2 Emissions & \n Average Wage",
     x = "Year"
   ) +
+  theme(legend.position.inside = c(1.55, 0.5)) +
   theme_minimal()
 
 ## Evolution in Texas
-graph_TX_wage <- joined_dataset |>
+joined_dataset |>
   filter(`NAICS2  (sectors)` != 11 & `NAICS2  (sectors)` != 23 & `NAICS2  (sectors)` != 49) |>
   ## Filtering data for Texas
   filter(State == "TX") |>
@@ -350,21 +341,11 @@ graph_TX_wage <- joined_dataset |>
   scale_y_continuous(
     name = "Average Monthly Wage",
     sec.axis = sec_axis(~ . * 25000, name = "Average CO2 Emissions per Firm")) +
-  labs(
-    title = "Texas' CO2 Emissions & Average Wage",
+  labs(title = "Texas' CO2 Emissions & Average Wage",
     x = "Year"
   ) +
+  theme(legend.position.inside = c(1.55, 0.5)) +
   theme_minimal()
-
-## Using the cowplot package to visualize both graphs side by side 
-legend <- get_legend(graph_CA_wage)
-
-graph_CA_wage <- graph_CA_wage + theme(legend.position = "none")
-graph_TX_wage <- graph_TX_wage + theme(legend.position = "none")
-
-plot_grid(
-  graph_CA_wage, graph_TX_wage, legend, 
-  ncol = 3, rel_widths = c(1, 0.8, 0.3))
 ```
 
 We observe that in California, where (as we mentioned) the distribution of sectoral `Total CO2 Emissions (non_biogenic)` is less dominated by sectors 21 and 22 like in Texas, the previously observed a general increase in `avg_EarnS` level. In Texas, the second highest sector in terms of CO2 emissions (sector 22) stays relatively stable during the period. Sector 21 seems to be a diverging point in both States. In Texas, we observe an exponential increase in `Total CO2 Emissions (non_biogenic)` from sector 21 from 2018. This could be due to the implementation of new shale oil infrastructures that put Texas in the position of biggest shale oil exporter in the USA. However, average wage in the sector does not follow the trend of an exponential increase (even if it grows steadily during the period). On the contrary, `avg_EarnS` in California increases exponentially while `Total CO2 Emissions (non_biogenic)` from this sector increase more linearly.
@@ -374,7 +355,7 @@ We observe that in California, where (as we mentioned) the distribution of secto
 #| message: false
 #| warning: false
 
-graph_CA_emp <- joined_dataset |>
+joined_dataset |>
   filter(`NAICS2  (sectors)` != 11 & `NAICS2  (sectors)` != 23 & `NAICS2  (sectors)` != 49) |>
   filter(State == "CA") |>
   group_by(`NAICS2  (sectors)`, year) |>
@@ -389,12 +370,13 @@ graph_CA_emp <- joined_dataset |>
     name = "Total Employment",
     sec.axis = sec_axis(~ ., name = "Average CO2 Emissions per Firm")) +
   labs(
-    title = "California's CO2 Emissions & Total Employment",
+    title = "California's CO2 Emissions & \n Total Employment",
     x = "Year"
   ) +
+  theme(legend.position.inside = c(1.55, 0.5)) +
   theme_minimal()
   
-graph_TX_emp <- joined_dataset |>
+joined_dataset |>
   filter(`NAICS2  (sectors)` != 11 & `NAICS2  (sectors)` != 23 & `NAICS2  (sectors)` != 49) |>
   filter(State == "TX") |>
   group_by(`NAICS2  (sectors)`, year) |>
@@ -410,21 +392,11 @@ graph_TX_emp <- joined_dataset |>
     name = "Total Employment",
     ## Creating a secondary axis for CO2 Emissions per firm, converting back its scale to correctly show the values (multiplying by 100)
     sec.axis = sec_axis(~ .*100, name = "Average CO2 Emissions per Firm")) +
-  labs(
-    title = "Texas' CO2 Emissions & Total Employment",
+  labs(title = "Texas' CO2 Emissions & \n Total Employment",
     x = "Year"
   ) +
+  theme(legend.position.inside = c(1.55, 0.5)) +
   theme_minimal()
-  
-## Using the cowplot package to visualize both graphs side by side 
-legend <- get_legend(graph_CA_emp)
-
-graph_CA_emp <- graph_CA_emp + theme(legend.position = "none")
-graph_TX_emp <- graph_TX_emp + theme(legend.position = "none")
-
-plot_grid(
-  graph_CA_emp, graph_TX_emp, legend, 
-  ncol = 3, rel_widths = c(1, 0.8, 0.3))
 ```
 
 The `total_Emp` variable seems to be more heterogeneous across sectors as well as across States. As we saw before, the sector dominating in terms of CO2 emissions (sector 21) experienced a sharp decline of employment from 2015 onwards, but continued to increase considerably in terms of `Total CO2 Emissions (non_biogenic)` in Texas. While in Texas, sector 21 seems to be the biggest sector in terms of employment, it is situated in California as one of the smallest. On the contrary, the `total_Emp` in sector 92 in California decreased considerably from 2019, as well as `Total CO2 Emissions (non_biogenic)` in the sector, which was not the case in Texas, where total employment grew steadily. In general, `total_Emp` seems to have stayed relatively constant during the time period, even if `Total CO2 Emissions (non_biogenic)` generally increased (exponentially in Texas).
@@ -438,7 +410,11 @@ $\leftrightarrow  E = \sum_iQ(Q_i/Q)(E_i/Q_i)$ (by multiplicating and dividing b
 
 As we explained in the Methodology part, we will choose an additive LMDI due to the nature of our chosen variables. The variation of CO2 emission will then be calculated based on a difference which equals the sum of all the drivers’ variations. It has the following structure:
 
-$\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$ with $\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ ; $\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$ and  $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ with $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$  defined as the logarithm mean.
+$\Delta E_T = \Delta E_Q + \Delta E_S+\Delta E_I$ with
+$\Delta E_Q = \sum_i L(E^T_i,E^0_i)*ln(Q_i^T/Q_i^0)$ ;
+$\Delta E_S = \sum_i L(E^T_i,E^0_i)*ln(S_i^T/S_i^0)$
+and  $\Delta E_I = \sum_i L(E^T_i,E^0_i)*ln(I_i^T/I_i^0)$ 
+with $L (x,y)= (x-y) /(ln (x) - ln (y))$ or $L(x,y) = x$ for $x = y$  defined as the logarithm mean.
 
 The analysis will be conducted from 2013 to 2023, thus we will study the long run contribution over the period. Based on the previous equations we derive the contribution of each factor depending on the sector (in total and in percentage) as well as the total variation of CO2 over the period obtained from the sum of all factor variations. 
 
@@ -781,6 +757,7 @@ dataset_for_ols <- joined_dataset |>
 
 ## Running the base regression
 base_ols_model <- lm(`ln Total CO2 Emissions` ~  `ln earn` + `ln emp`, data = dataset_for_ols)
+
 ```
 
 
@@ -848,6 +825,7 @@ xtable::print.xtable(
   include.rownames = FALSE,
   comment = FALSE
 )
+
 ```
 
 As in the previous results, we still have a positive and highly significant correlation between average monthly wage and CO2 emissions per industry : A 1% increase in average wages is associated with approximately a 3.16% increase in CO2 emissions, keeping all other variables constant. On the contrary ln emp is still not statistically significant (p-value = 0.134) and is still positive. Finally, the dummy `Environment` proves to be highly significant (p-value \< 0.01) and positive. We could infer that firms in California after the introduction of the cap-and-trade program in 2015 emit approximately 90% less CO2 than firms in Texas during the same period, controlling for wages and employment. This result confirms our main hypothesis : The cap-and-trade program has a significant effect on the emissions of industries in our dataset.
@@ -872,6 +850,7 @@ par(mfrow = c(2, 2)) ### setting up layout
 plot(extend_ols_model)
 
 ## Homoscedasticity
+
 
 # running the bptest and extracting relevant values
 bp_result <- bptest(extend_ols_model)
@@ -931,6 +910,7 @@ xtable::print.xtable(
   include.rownames = FALSE,
   comment = FALSE
 )
+
 ```
 
 The `ln earn` variable remains highly significant and positively correlated with CO2 emissions, just like in the previous results. The high similarity between the coefficients in all three models implies that wage does not correlate that differently with CO2 emissions across sectors. Similarly, the Environment dummy keeps its negative sign (-0.94) and gains significance (p = 9.22e-11). After controlling for sectoral fixed effects, firms in California, since the Cap-and-Trade program, emit approximately 94% less CO2 than similar firms in Texas or California pre-2015, thus corresponding to our previous result. Finally, the variable `ln emp` is now negatively correlated with CO2 emissions of industries (-0.004), but still not statistically significant (p = 0.942). The negative sign could be due to the fact that high-emitting industries (like fuel suppliers) may be more capital-intensive than labor intensive. Sectoral differences could have been masking the true effect of employment size on CO2 emissions of industries. We could indeed infer from the result that labor-intensive industries, i.e. that have more employees emit less than capital-intensive industries. However, this hypothesis should be relativized as the variable is even less significant than before.
